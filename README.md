@@ -92,7 +92,7 @@ the pipeline will kick off and tag the latest git commit.
 - Configure the dependencies
   ```sh
   cd test/
-  go mod init github.com/sourcefuse/terraform-aws-refarch-<module_name>
+  go mod init github.com/sourcefuse/terraform-aws-refarch-client-vpn
   go get github.com/gruntwork-io/terratest/modules/terraform
   ```
 - Now execute the test  
