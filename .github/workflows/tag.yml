@@ -11,7 +11,8 @@ jobs:
   tag:
     runs-on:
       - refarch
-      - dev
+      - poc
+      - arc
     steps:
       - uses: actions/checkout@v2
 

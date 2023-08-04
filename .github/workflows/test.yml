@@ -14,7 +14,8 @@ jobs:
   tflint:
     runs-on:
       - refarch
-      - dev
+      - poc
+      - arc
     name: tflint
     steps:
       - uses: actions/checkout@master

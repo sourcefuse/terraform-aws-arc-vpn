@@ -9,7 +9,7 @@ variable "environment" {
 
 variable "namespace" {
   type        = string
-  default     = "hssc"
+  default     = ""
   description = "Namespace for the resources."
 }
 
