@@ -13,12 +13,6 @@ terraform {
 
 }
 
-locals {
-  client_vpn_name         = "${var.namespace}-${var.environment}-${var.client_vpn_name}"
-  client_vpn_gateway_name = "${var.namespace}-${var.environment}-${var.client_vpn_gateway_name}"
-}
-
-
 ################################################################################
 ## vpn
 ################################################################################
@@ -26,7 +20,7 @@ resource "aws_vpn_gateway" "default" {
   vpc_id = data.aws_vpc.vpc.id
 
   tags = merge(module.tags.tags, tomap({
-    Name = local.client_vpn_gateway_name
+    Name = "${var.namespace}-${var.environment}-${var.client_vpn_gateway_name}"
   }))
 }
 
@@ -66,6 +60,6 @@ resource "aws_ec2_client_vpn_endpoint" "default" {
   security_group_ids     = data.aws_security_groups.security_groups.ids
 
   tags = {
-    Name = local.client_vpn_name
+    Name = "${var.namespace}-${var.environment}-${var.client_vpn_name}"
   }
 }
