@@ -13,6 +13,12 @@ variable "namespace" {
   description = "Namespace for the resources."
 }
 
+variable "region" {
+  type        = string
+  default     = "us-east-1"
+  description = "Defines the aws region where resources are to be deployed"
+}
+
 ################################################################################
 ## vpn
 ################################################################################
@@ -70,11 +76,11 @@ variable "dns_servers" {
 variable "client_vpn_name" {
   type        = string
   description = "The name of the client vpn"
-  default = "client-vpn-01"
+  default     = "client-vpn-01"
 }
 
 variable "client_vpn_gateway_name" {
   type        = string
   description = "The name of the client vpn gateway"
-  default = "client-vpn-gw"
+  default     = "client-vpn-gw"
 }

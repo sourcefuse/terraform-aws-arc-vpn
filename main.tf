@@ -54,10 +54,10 @@ resource "aws_ec2_client_vpn_endpoint" "default" {
 
   ## authentication
   authentication_options {
-    type              = "federated-authentication"    ## other options are "certificate-authentication" or "directory-service-authentication"
-    saml_provider_arn = aws_iam_saml_provider.default.arn   ## for federated-authentication
-   # root_certificate_chain_arn = var.root_certificate_chain_arn    ## for certificate-authentication
-   # active_directory_id = var.active_directory_id              ## for directory-service-authentication
+    type              = "federated-authentication"        ## other options are "certificate-authentication" or "directory-service-authentication"
+    saml_provider_arn = aws_iam_saml_provider.default.arn ## for federated-authentication
+    # root_certificate_chain_arn = var.root_certificate_chain_arn    ## for certificate-authentication
+    # active_directory_id = var.active_directory_id              ## for directory-service-authentication
   }
 
   ## security
