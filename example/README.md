@@ -1,4 +1,4 @@
-# terraform-aws-module-template example
+# terraform-aws-refarch-vpn example
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
@@ -14,7 +14,9 @@ No providers.
 
 ## Modules
 
-No modules.
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_vpn"></a> [vpn](#module\_vpn) | ../ | n/a |
 
 ## Resources
 

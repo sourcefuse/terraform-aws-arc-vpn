@@ -1,22 +1,9 @@
-################################################################
+################################################################################
 ## shared
-################################################################
-variable "environment" {
-  type        = string
-  default     = "dev"
-  description = "ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT'"
-}
-
-variable "namespace" {
-  type        = string
-  default     = "arc"
-  description = "Namespace for the resources."
-}
-
-variable "region" {
-  type        = string
-  default     = "us-east-1"
-  description = "Defines the aws region where resources are to be deployed"
+################################################################################
+variable "tags" {
+  type        = map(string)
+  description = "Default tags to apply to every applicable resource"
 }
 
 ################################################################################
@@ -47,7 +34,7 @@ variable "client_vpn_split_tunnel" {
 }
 
 variable "saml_metadata_document_content" {
-  default     = ""
+  default     = null
   type        = string
   description = "The content of the saml metadata document"
 }

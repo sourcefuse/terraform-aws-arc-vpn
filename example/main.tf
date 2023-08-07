@@ -15,3 +15,19 @@ terraform {
 provider "aws" {
   region = var.region
 }
+
+################################################################################
+## lookups
+################################################################################
+// TODO - add your data lookups here for things like vpc id / security groups
+
+################################################################################
+## vpn
+################################################################################
+// TODO - add example configuration here
+// TODO - test the example to make sure everything works fine
+module "vpn" {
+  source = "../"
+
+  tags = {}
+}

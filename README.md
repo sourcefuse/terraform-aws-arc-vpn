@@ -1,8 +1,8 @@
-# terraform-aws-client-vpn-template
+# terraform-aws-refarch-vpn
 
 ## Overview
 
-SourceFuse AWS Reference Architecture (ARC) Terraform module for managing Client VPN.
+SourceFuse AWS Reference Architecture (ARC) Terraform module for managing VPN.
 
 ## Usage
 
@@ -10,7 +10,7 @@ To see a full example, check out the [main.tf](./example/main.tf) file in the ex
 
 ```hcl
 module "this" {
-  source = "git::https://github.com/sourcefuse/terraform-aws-refarch-client-vpn"
+  source = "git::https://github.com/sourcefuse/terraform-aws-refarch-vpn"
 }
 ```
 
@@ -27,7 +27,6 @@ module "this" {
 | Name | Version |
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | 5.11.0 |
-| <a name="provider_aws.custom-provider"></a> [aws.custom-provider](#provider\_aws.custom-provider) | 5.11.0 |
 
 ## Modules
 
@@ -37,12 +36,10 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [aws_ec2_client_vpn_endpoint.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_client_vpn_endpoint) | resource |
-| [aws_iam_saml_provider.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_saml_provider) | resource |
-| [aws_vpn_gateway.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpn_gateway) | resource |
-| [aws_acm_certificate.cert](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/acm_certificate) | data source |
-| [aws_security_groups.security_groups](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_groups) | data source |
-| [aws_vpc.vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
+| [aws_ec2_client_vpn_endpoint.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_client_vpn_endpoint) | resource |
+| [aws_iam_saml_provider.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_saml_provider) | resource |
+| [aws_security_group.vpn](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
+| [aws_vpn_gateway.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpn_gateway) | resource |
 
 ## Inputs
 
@@ -55,11 +52,9 @@ No modules.
 | <a name="input_cloudwatch_log_group_name"></a> [cloudwatch\_log\_group\_name](#input\_cloudwatch\_log\_group\_name) | The name of the vpn client cloudwatch log group | `string` | `""` | no |
 | <a name="input_cloudwatch_log_stream_name"></a> [cloudwatch\_log\_stream\_name](#input\_cloudwatch\_log\_stream\_name) | The name of the vpn client cloudwatch log stream | `string` | `""` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | The list of dns server ip address | `list(string)` | <pre>[<br>  "1.1.1.1",<br>  "1.0.0.1"<br>]</pre> | no |
-| <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `"dev"` | no |
 | <a name="input_iam_saml_provider_name"></a> [iam\_saml\_provider\_name](#input\_iam\_saml\_provider\_name) | The name of the IAM SAML Provider name | `string` | `""` | no |
-| <a name="input_namespace"></a> [namespace](#input\_namespace) | Namespace for the resources. | `string` | `"arc"` | no |
-| <a name="input_region"></a> [region](#input\_region) | Defines the aws region where resources are to be deployed | `string` | `"us-east-1"` | no |
-| <a name="input_saml_metadata_document_content"></a> [saml\_metadata\_document\_content](#input\_saml\_metadata\_document\_content) | The content of the saml metadata document | `string` | `""` | no |
+| <a name="input_saml_metadata_document_content"></a> [saml\_metadata\_document\_content](#input\_saml\_metadata\_document\_content) | The content of the saml metadata document | `string` | `null` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Default tags to apply to every applicable resource | `map(string)` | n/a | yes |
 | <a name="input_transport_protocol"></a> [transport\_protocol](#input\_transport\_protocol) | The transport protocol to be used by the VPN session. | `string` | `"udp"` | no |
 
 ## Outputs
@@ -98,7 +93,7 @@ the pipeline will kick off and tag the latest git commit.
 - Configure the dependencies
   ```sh
   cd test/
-  go mod init github.com/sourcefuse/terraform-aws-refarch-client-vpn
+  go mod init github.com/sourcefuse/terraform-aws-refarch-vpn
   go get github.com/gruntwork-io/terratest/modules/terraform
   ```
 - Now execute the test  
