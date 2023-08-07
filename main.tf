@@ -2,7 +2,7 @@
 ## defaults
 ################################################################################
 terraform {
-  required_version = ">= 1.3"
+  required_version = ">= 1.3, < 2.0.0"
 
   required_providers {
     aws = {
@@ -14,8 +14,8 @@ terraform {
 }
 
 locals {
-  client_vpn_name         = "${var.namespace}-${var.environment}-client-vpn-01"
-  client_vpn_gateway_name = "${var.namespace}-${var.environment}-client-vpn"
+  client_vpn_name         = "${var.namespace}-${var.environment}-${var.client_vpn_name}"
+  client_vpn_gateway_name = "${var.namespace}-${var.environment}-${var.client_vpn_gateway_name}"
 }
 
 
@@ -54,8 +54,10 @@ resource "aws_ec2_client_vpn_endpoint" "default" {
 
   ## authentication
   authentication_options {
-    type              = "federated-authentication"
-    saml_provider_arn = aws_iam_saml_provider.default.arn
+    type              = "federated-authentication"    ## other options are "certificate-authentication" or "directory-service-authentication"
+    saml_provider_arn = aws_iam_saml_provider.default.arn   ## for federated-authentication
+   # root_certificate_chain_arn = var.root_certificate_chain_arn    ## for certificate-authentication
+   # active_directory_id = var.active_directory_id              ## for directory-service-authentication
   }
 
   ## security

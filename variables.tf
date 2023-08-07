@@ -9,7 +9,7 @@ variable "environment" {
 
 variable "namespace" {
   type        = string
-  default     = ""
+  default     = "arc"
   description = "Namespace for the resources."
 }
 
@@ -41,7 +41,7 @@ variable "client_vpn_split_tunnel" {
 }
 
 variable "saml_metadata_document_content" {
-  default     = "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\u003cmd:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"https://portal.sso.us-east-1.amazonaws.com/saml/assertion/MTkyNTMwMjE4MDg1X2lucy1lNDJiMDkxZDI2MTllZjNl\"\u003e\n    \u003cmd:IDPSSODescriptor WantAuthnRequestsSigned=\"false\" protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\"\u003e\n        \u003cmd:KeyDescriptor use=\"signing\"\u003e\n            \u003cds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"\u003e\n                \u003cds:X509Data\u003e\n                    \u003cds:X509Certificate\u003eMIIDBzCCAe+gAwIBAgIFAIOiKqIwDQYJKoZIhvcNAQELBQAwRTEWMBQGA1UEAwwNYW1hem9uYXdzLmNvbTENMAsGA1UECwwESURBUzEPMA0GA1UECgwGQW1hem9uMQswCQYDVQQGEwJVUzAeFw0yMzA2MTMxNDI1NTJaFw0yODA2MTMxNDI1NTJaMEUxFjAUBgNVBAMMDWFtYXpvbmF3cy5jb20xDTALBgNVBAsMBElEQVMxDzANBgNVBAoMBkFtYXpvbjELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC001jvCvyI6BLWVgDkR4KhEj8tl72jNMji05bGcBVzOQGc200p0dv8iuCN++DxJmwg2ds52qq5cCev9PrzzLnsuo1NLmerPdRjF4errEMOQOZ0jNNgUTLwoeuvd+aqSBXX4/LjO9+jJRhUeeYQsjwhHGu+ir3PSeV4sla++rQZtGjTj90wJpiOn8cDUUISsJHlvbgXzphg64TNTRfS1D4GBeC0amFabchTvXOpDj88QneiTQmzORYZYhNeAXEHqTUmBwntU8Pa8MTVR/O7NbKbRdDm8n/jYS4k9CSUjY3Dw8tCdEnoJVgAaInQYHtP7iDPzkvKV4tUJl2gINR6lW/dAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAEFkdZEj7PRC8Vt3qY8IU7TzGpZutYyJBv4Raoev3JizkpopZ3brbqWMHiiZ/RI+ynqI/AUjR/SaXfEEQ5LRclji0CLreF23opbV9QQfA+DMxGxl7uiUE4c0kZrhzUy8CjHVfXR92jCncULUSybGYLO0krE4+46pE/OpjtdmdMRQmCuItIahG2I8nxjeXMdo65byLScR22/MLv1FuyflXEcNMwuaPYXcDFlfvlWvGNaoqENeU85+v5nVtQiEtZ0Ou/ygVlfKg365XRLJntmVeuoyolGSOdY8fRsUnvQyJS3/YwpwyyzWm721NxjvIPjQdlfH/KPvCpBeQmN+fTviZhs=\u003c/ds:X509Certificate\u003e\n                \u003c/ds:X509Data\u003e\n            \u003c/ds:KeyInfo\u003e\n        \u003c/md:KeyDescriptor\u003e\n        \u003cmd:SingleLogoutService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" Location=\"https://portal.sso.us-east-1.amazonaws.com/saml/logout/MTkyNTMwMjE4MDg1X2lucy1lNDJiMDkxZDI2MTllZjNl\"/\u003e\n        \u003cmd:SingleLogoutService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://portal.sso.us-east-1.amazonaws.com/saml/logout/MTkyNTMwMjE4MDg1X2lucy1lNDJiMDkxZDI2MTllZjNl\"/\u003e\n        \u003cmd:NameIDFormat/\u003e\n        \u003cmd:SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" Location=\"https://portal.sso.us-east-1.amazonaws.com/saml/assertion/MTkyNTMwMjE4MDg1X2lucy1lNDJiMDkxZDI2MTllZjNl\"/\u003e\n        \u003cmd:SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://portal.sso.us-east-1.amazonaws.com/saml/assertion/MTkyNTMwMjE4MDg1X2lucy1lNDJiMDkxZDI2MTllZjNl\"/\u003e\n    \u003c/md:IDPSSODescriptor\u003e\n\u003c/md:EntityDescriptor\u003e\n"
+  default     = ""
   type        = string
   description = "The content of the saml metadata document"
 }
@@ -65,4 +65,16 @@ variable "dns_servers" {
     "1.1.1.1",
     "1.0.0.1"
   ]
+}
+
+variable "client_vpn_name" {
+  type        = string
+  description = "The name of the client vpn"
+  default = "client-vpn-01"
+}
+
+variable "client_vpn_gateway_name" {
+  type        = string
+  description = "The name of the client vpn gateway"
+  default = "client-vpn-gw"
 }
