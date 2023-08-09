@@ -13,19 +13,6 @@ terraform {
 }
 
 ################################################################################
-## Locals
-################################################################################
-
-locals {
-  self_service_portal = var.self_service_portal_settings == "enabled"
-  federated_authentication = var.client_authentication_type == "federated-authentication"
-  self_service_federated_authentication = local.self_service_portal && var.client_authentication_type == "federated-authentication"
-  certificatte_authentication = var.client_authentication_type == "certificatte-authentication"
-  directory_service_authentication = var.client_authentication_type == "directory-service-authentication"
-
-}
-
-################################################################################
 ## Data lookups
 ################################################################################
 
@@ -53,7 +40,7 @@ module "security_group" {
   vpc_id      = var.vpc_id
 
   ingress_with_cidr_blocks = var.ingress_rules
-  egress_with_cidr_blocks = var.egress_rules
+  egress_with_cidr_blocks  = var.egress_rules
 
   tags = merge(var.tags, tomap({
     Name = var.client_vpn_name
@@ -93,15 +80,15 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
 
   ## authentication
   authentication_options {
-    type              = var.client_authentication_type
-    saml_provider_arn = var.saml_provider_arn
+    type                           = var.client_authentication_type
+    saml_provider_arn              = var.saml_provider_arn
     self_service_saml_provider_arn = var.self_service_saml_provider_arn
-    root_certificate_chain_arn = var.root_certificate_chain_arn
-    active_directory_id = local.directory_service_authentication ? var.active_directory_id : null
+    root_certificate_chain_arn     = var.root_certificate_chain_arn
+    active_directory_id            = var.active_directory_id
   }
 
   ## security
-  session_timeout_hours = var.session_timeout_hours
+  session_timeout_hours  = var.session_timeout_hours
   server_certificate_arn = var.client_vpn_server_certificate_arn
   transport_protocol     = var.transport_protocol
   security_group_ids     = concat(tolist([module.security_group.security_group_id]), var.client_vpn_additional_security_group_ids)
@@ -112,10 +99,10 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
 }
 
 resource "aws_ec2_client_vpn_network_association" "this" {
-  count                = length(data.aws_subnets.this.ids)
+  count = length(data.aws_subnets.this.ids)
 
   client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
-  subnet_id            = data.aws_subnets.this.ids[count.index]
+  subnet_id              = data.aws_subnets.this.ids[count.index]
 }
 
 resource "aws_ec2_client_vpn_authorization_rule" "this" {

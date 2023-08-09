@@ -11,22 +11,6 @@ variable "vpc_id" {
   description = "The id of the target network VPC"
 }
 
-variable "namespace" {
-  type        = string
-  description = "Namespace for the resources."
-}
-
-variable "region" {
-  type        = string
-  description = "AWS Region"
-  default     = "us-east-1"
-}
-
-variable "environment" {
-  type        = string
-  description = "The environment variable such as dev, staging, etc."
-}
-
 ################################################################################
 ## vpn
 ################################################################################
@@ -62,13 +46,13 @@ variable "self_service_saml_provider_arn" {
 variable "active_directory_id" {
   type        = string
   description = "The active directory id for client vpn authentication"
-  default = null
+  default     = null
 }
 
 variable "root_certificate_chain_arn" {
   type        = string
   description = "The arn of the client vpn authentication root certificate"
-  default = null
+  default     = null
 }
 
 variable "client_vpn_server_certificate_arn" {
@@ -112,12 +96,6 @@ variable "client_vpn_split_tunnel" {
   description = "Indicates whether split-tunnel is enabled on VPN endpoint. Default value is false."
 }
 
-variable "saml_metadata_document_name" {
-  default     = "saml-metadata.xml"
-  type        = string
-  description = "The name of the saml metadata document"
-}
-
 variable "cloudwatch_log_group_name" {
   default     = "client-vpn-log-group"
   type        = string
@@ -153,24 +131,24 @@ variable "client_vpn_gateway_name" {
 
 variable "ingress_rules" {
   description = "List of ingress rules"
-  type        = list(object({
-      description      = string
-      cidr_blocks  = string
-      from_port   = number
-      to_port     = number
-      protocol = string
+  type = list(object({
+    description = string
+    cidr_blocks = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
   }))
   default = []
 }
 
 variable "egress_rules" {
   description = "Default list of egress rules"
-  type        = list(object({
-      description      = string
-      cidr_blocks   = string
-      from_port   = number
-      to_port     = number
-      protocol = string
+  type = list(object({
+    description = string
+    cidr_blocks = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
   }))
   default = []
 }
