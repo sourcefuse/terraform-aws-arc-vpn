@@ -71,32 +71,6 @@ resource "aws_vpn_gateway" "this" {
   }))
 }
 
-###############################################################################
-## IAM Provider
-###############################################################################
-
-resource "aws_iam_saml_provider" "saml_provider" {
-  count = var.iam_saml_provider_enabled == true ? 1 : 0
-
-  name                   = var.iam_saml_provider_name
-  saml_metadata_document = file(var.saml_metadata_document_name)
-
-  tags = merge(var.tags, tomap({
-    Name = var.iam_saml_provider_name
-  }))
-}
-
-resource "aws_iam_saml_provider" "self_service_saml_provider" {
-  count = var.self_service_portal_settings == "enabled" ? 1 : 0
-
-  name                   = var.iam_self_service_saml_provider_name
-  saml_metadata_document = file(var.saml_metadata_document_name)
-
-  tags = merge(var.tags, tomap({
-    Name = var.iam_self_service_saml_provider_name
-  }))
-}
-
 ###########################################################################
 ## Client VPN
 ###########################################################################
@@ -120,9 +94,9 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
   ## authentication
   authentication_options {
     type              = var.client_authentication_type
-    saml_provider_arn = local.federated_authentication ? try(var.saml_provider_arn, aws_iam_saml_provider.saml_provider[0].arn) : null
-    self_service_saml_provider_arn = local.self_service_federated_authentication ? try(var.self_service_saml_provider_arn, aws_iam_saml_provider.self_service_saml_provider[0].arn) : null
-    root_certificate_chain_arn = local.certificatte_authentication ? var.root_certificate_chain_arn : null
+    saml_provider_arn = var.saml_provider_arn
+    self_service_saml_provider_arn = var.self_service_saml_provider_arn
+    root_certificate_chain_arn = var.root_certificate_chain_arn
     active_directory_id = local.directory_service_authentication ? var.active_directory_id : null
   }
 
@@ -130,7 +104,7 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
   session_timeout_hours = var.session_timeout_hours
   server_certificate_arn = var.client_vpn_server_certificate_arn
   transport_protocol     = var.transport_protocol
-  security_group_ids     = concat(module.security_group.security_group_id, var.client_vpn_additional_security_group_ids)
+  security_group_ids     = concat(tolist([module.security_group.security_group_id]), var.client_vpn_additional_security_group_ids)
 
   tags = merge(var.tags, tomap({
     Name = var.client_vpn_name

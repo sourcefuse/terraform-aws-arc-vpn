@@ -38,30 +38,12 @@ variable "client_vpn_cidr" {
 variable "client_authentication_type" {
   type        = string
   description = "Set to one of these applicable options: `federated-authentication`, `certificate-authentication` or `directory-service-authentication`"
-  default     = "federated-authentication"
+  default     = "certificate-authentication"
 }
 
 variable "connection_log_enabled" {
   type        = bool
   description = "Set to `false` if you do not want client vpn connection log enabled"
-  default     = true
-}
-
-variable "iam_saml_provider_name" {
-  type        = string
-  description = "The name of the IAM SAML Provider name"
-  default     = "client_vpn_saml_provider"
-}
-
-variable "iam_self_service_saml_provider_name" {
-  type        = string
-  description = "The name of the IAM self service SAML Provider name"
-  default     = "client_vpn_self_service_saml_provider"
-}
-
-variable "iam_saml_provider_enabled" {
-  type        = bool
-  description = "Set to `true` if iam saml provider is setup"
   default     = false
 }
 
@@ -80,6 +62,7 @@ variable "self_service_saml_provider_arn" {
 variable "active_directory_id" {
   type        = string
   description = "The active directory id for client vpn authentication"
+  default = null
 }
 
 variable "root_certificate_chain_arn" {
