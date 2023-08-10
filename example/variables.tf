@@ -6,10 +6,11 @@ variable "tags" {
   description = "Default tags to apply to every applicable resource"
 }
 
-variable "vpc_id" {
+variable "vpc_name" {
   type        = string
-  description = "The id of the target network VPC"
+  description = "The name of the target network VPC"
 }
+
 
 ################################################################################
 ## vpn
@@ -17,6 +18,12 @@ variable "vpc_id" {
 variable "client_vpn_cidr" {
   type        = string
   description = "The IPv4 address range, in CIDR notation, from which to assign client IP addresses. The CIDR block should be /22 or greater"
+}
+
+variable "route_53_zone" {
+  type        = string
+  description = "The name of the domain to create in route53"
+  default     = "exampledomain.com"
 }
 
 variable "client_authentication_type" {
@@ -47,17 +54,6 @@ variable "active_directory_id" {
   type        = string
   description = "The active directory id for client vpn authentication"
   default     = null
-}
-
-variable "root_certificate_chain_arn" {
-  type        = string
-  description = "The arn of the client vpn authentication root certificate"
-  default     = null
-}
-
-variable "client_vpn_server_certificate_arn" {
-  type        = string
-  description = "The arn of the client vpn server certificate"
 }
 
 variable "self_service_portal_settings" {
