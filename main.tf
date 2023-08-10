@@ -13,134 +13,121 @@ terraform {
 }
 
 ################################################################################
-## Data lookups
-################################################################################
-data "aws_vpc" "this" {
-  filter {
-    name   = "tag:Name"
-    values = [var.vpc_name]
-  }
-}
-
-data "aws_subnets" "this" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.this.id]
-  }
-}
-
-################################################################################
-## acm certificates
-################################################################################
-
-data "aws_route53_zone" "this" {
-  name         = var.route_53_zone
-}
-
-module "acm_request_server_certificate" {
-  source  = "cloudposse/acm-request-certificate/aws"
-  version = "0.15.1"
-
-  domain_name                       = "${var.route_53_zone}-1"
-  process_domain_validation_options = true
-  ttl                               = "300"
-  wait_for_certificate_issued = var.wait_for_certificate_issued
-  subject_alternative_names         = ["*.${var.route_53_zone}"]
-  depends_on                        = [data.aws_route53_zone.this]
-}
-
-module "acm_request_root_certificate" {
-  source  = "cloudposse/acm-request-certificate/aws"
-  version = "0.15.1"
-
-  domain_name                       = "${var.route_53_zone}-2"
-  process_domain_validation_options = true
-  ttl                               = "300"
-  subject_alternative_names         = ["*.${var.route_53_zone}"]
-  depends_on                        = [data.aws_route53_zone.this]
-}
-
-################################################################################
 ## security groups
 ################################################################################
-
-module "security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "5.1.0"
-
+resource "aws_security_group" "vpn" {
   name        = "${var.client_vpn_name}-sg"
-  description = "Client VPN Security Group"
-  vpc_id      = data.aws_vpc.this.id
+  description = "VPN Security Group configuration"
+  vpc_id      = var.vpc_id
 
-  ingress_with_cidr_blocks = var.ingress_rules
-  egress_with_cidr_blocks  = var.egress_rules
+  dynamic "ingress" {
+    for_each = var.client_vpn_ingress_rules
+
+    content {
+      description      = ingress.value.description
+      from_port        = ingress.value.from_port
+      to_port          = ingress.value.to_port
+      protocol         = ingress.value.protocol
+      cidr_blocks      = ingress.value.cidr_blocks
+      security_groups  = ingress.value.security_group_id != null ? ingress.value.security_group_id : []
+      ipv6_cidr_blocks = ingress.value.ipv6_cidr_blocks
+      self             = ingress.value.self
+    }
+  }
+
+  dynamic "egress" {
+    for_each = var.client_vpn_egress_rules
+
+    content {
+      description      = egress.value.description
+      from_port        = egress.value.from_port
+      to_port          = egress.value.to_port
+      protocol         = egress.value.protocol
+      cidr_blocks      = egress.value.cidr_blocks
+      security_groups  = egress.value.security_group_id != null ? egress.value.security_group_id : []
+      ipv6_cidr_blocks = egress.value.ipv6_cidr_blocks
+    }
+  }
 
   tags = merge(var.tags, tomap({
-    Name = var.client_vpn_name
+    Name = "${var.client_vpn_name}-sg"
   }))
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 ################################################################################
-## VPN Gateway
+## certs
+################################################################################
+module "self_signed_cert" {
+  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+  count  = var.create_self_signed_server_cert == true ? 1 : 0
+
+  name = var.self_signed_server_cert_name
+
+  subject  = var.self_signed_server_cert_subject
+  validity = var.self_signed_server_cert_validity
+
+  allowed_uses = var.self_signed_server_cert_allowed_uses
+
+  subject_alt_names = var.self_signed_server_cert_subject_alt_names
+}
+
+################################################################################
+## vpn
 ################################################################################
 resource "aws_vpn_gateway" "this" {
-  vpc_id = data.aws_vpc.this.id
+  vpc_id = var.vpc_id
 
   tags = merge(var.tags, tomap({
     Name = var.client_vpn_gateway_name
   }))
 }
 
-###########################################################################
-## Client VPN
-###########################################################################
+resource "aws_iam_saml_provider" "this" {
+  count = var.iam_saml_provider_enabled == true ? 1 : 0
+
+  name                   = var.iam_saml_provider_name
+  saml_metadata_document = var.saml_metadata_document_content
+
+  tags = merge(var.tags, tomap({
+    Name = var.iam_saml_provider_name
+  }))
+}
 
 resource "aws_ec2_client_vpn_endpoint" "this" {
-  depends_on = [module.acm_request_root_certificate, module.acm_request_server_certificate]
-  vpc_id     = data.aws_vpc.this.id
+  vpc_id = var.vpc_id
 
   ## network
-  client_cidr_block   = var.client_vpn_cidr
+  client_cidr_block   = var.client_cidr
   split_tunnel        = var.client_vpn_split_tunnel
-  self_service_portal = var.self_service_portal_settings
+  self_service_portal = var.client_vpn_self_service_portal
   dns_servers         = var.dns_servers
 
   ## logging
   connection_log_options {
-    enabled               = var.connection_log_enabled
-    cloudwatch_log_stream = var.cloudwatch_log_stream_name
-    cloudwatch_log_group  = var.cloudwatch_log_group_name
+    enabled               = var.client_vpn_log_options.enabled
+    cloudwatch_log_stream = var.client_vpn_log_options.cloudwatch_log_stream
+    cloudwatch_log_group  = var.client_vpn_log_options.cloudwatch_log_group
   }
 
   ## authentication
   authentication_options {
-    type                           = var.client_authentication_type
-    saml_provider_arn              = var.saml_provider_arn
-    self_service_saml_provider_arn = var.self_service_saml_provider_arn
-    root_certificate_chain_arn     = module.acm_request_root_certificate.arn
-    active_directory_id            = var.active_directory_id
+    active_directory_id            = var.authentication_options_active_directory_id
+    root_certificate_chain_arn     = var.authentication_options_root_certificate_chain_arn
+    saml_provider_arn              = var.iam_saml_provider_enabled == true ? one(aws_iam_saml_provider.this[*].arn) : var.authentication_options_saml_provider_arn
+    self_service_saml_provider_arn = var.authentication_options_self_service_saml_provider_arn
+    type                           = var.authentication_options_type
   }
 
   ## security
-  session_timeout_hours  = var.session_timeout_hours
-  server_certificate_arn = module.acm_request_server_certificate.arn
-  transport_protocol     = var.transport_protocol
-  security_group_ids     = concat(tolist([module.security_group.security_group_id]), var.client_vpn_additional_security_group_ids)
+  server_certificate_arn = var.create_self_signed_server_cert == true ? module.self_signed_cert.certificate_arn : var.client_server_certificate_arn
+  transport_protocol     = var.client_server_transport_protocol
+  security_group_ids     = concat(aws_security_group.vpn.id, var.client_vpn_additional_security_group_ids)
 
   tags = merge(var.tags, tomap({
     Name = var.client_vpn_name
   }))
-}
-
-resource "aws_ec2_client_vpn_network_association" "this" {
-  for_each = toset(data.aws_subnets.this.ids)
-
-  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
-  subnet_id              = each.value
-}
-
-resource "aws_ec2_client_vpn_authorization_rule" "this" {
-  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
-  target_network_cidr    = data.aws_vpc.this.cidr_block
-  authorize_all_groups   = var.authorize_all_groups_for_client_vpn
 }
