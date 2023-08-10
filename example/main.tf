@@ -33,8 +33,12 @@ data "aws_subnets" "this" {
 ## acm certificates
 ################################################################################
 
-resource "aws_route53_zone" "this" {
-  name = var.route_53_zone
+data "aws_route53_zone" "this" {
+  name         = var.route_53_zone
+
+  tags = {
+    Name = var.route_53_zone
+  }
 }
 
 module "acm_request_server_certificate" {
@@ -46,7 +50,7 @@ module "acm_request_server_certificate" {
   ttl                               = "300"
   wait_for_certificate_issued = var.wait_for_certificate_issued
   subject_alternative_names         = ["*.${var.route_53_zone}"]
-  depends_on                        = [aws_route53_zone.this]
+  depends_on                        = [data.aws_route53_zone.this]
 }
 
 module "acm_request_root_certificate" {
@@ -57,7 +61,7 @@ module "acm_request_root_certificate" {
   process_domain_validation_options = true
   ttl                               = "300"
   subject_alternative_names         = ["*.${var.route_53_zone}"]
-  depends_on                        = [aws_route53_zone.this]
+  depends_on                        = [data.aws_route53_zone.this]
 }
 
 ################################################################################

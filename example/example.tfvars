@@ -3,6 +3,7 @@ vpc_name                          = "arc-poc-vpc"
 client_vpn_cidr                   = "10.12.4.0/22"
 self_service_portal_settings      = "disabled"
 transport_protocol                = "tcp"
+route_53_zone = "sfarcpoc.com"
 tags = {
   Environment = "dev"
   Project     = "test"
