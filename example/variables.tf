@@ -26,6 +26,12 @@ variable "route_53_zone" {
   default     = "exampledomain.com"
 }
 
+variable "wait_for_certificate_issued" {
+  type        = bool
+  description = "Set to `off` to disable waiting for the certificate to be issued"
+  default     = true
+}
+
 variable "client_authentication_type" {
   type        = string
   description = "Set to one of these applicable options: `federated-authentication`, `certificate-authentication` or `directory-service-authentication`"
