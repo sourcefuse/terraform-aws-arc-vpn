@@ -43,7 +43,8 @@ module "acm_request_server_certificate" {
 
   domain_name                       = "${var.route_53_zone}-1"
   process_domain_validation_options = true
-  ttl                               = "3600"
+  ttl                               = "300"
+  wait_for_certificate_issued = var.wait_for_certificate_issued
   subject_alternative_names         = ["*.${var.route_53_zone}"]
   depends_on                        = [aws_route53_zone.this]
 }
@@ -54,7 +55,7 @@ module "acm_request_root_certificate" {
 
   domain_name                       = "${var.route_53_zone}-2"
   process_domain_validation_options = true
-  ttl                               = "3600"
+  ttl                               = "300"
   subject_alternative_names         = ["*.${var.route_53_zone}"]
   depends_on                        = [aws_route53_zone.this]
 }
