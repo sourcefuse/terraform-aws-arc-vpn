@@ -15,32 +15,46 @@ variable "vpc_id" {
 ## security
 ################################################################################
 variable "client_vpn_ingress_rules" {
-  type = map(object({
-    description       = optional(string)
-    from_port         = number
-    to_port           = number
-    protocol          = string
-    cidr_blocks       = optional(list(string))
-    security_group_id = optional(list(string))
-    ipv6_cidr_blocks  = optional(list(string))
-    self              = optional(bool)
+  type = list(object({
+    description        = optional(string, "")
+    from_port          = number
+    to_port            = number
+    protocol           = any
+    cidr_blocks        = optional(list(string), [])
+    security_group_ids = optional(list(string), [])
+    ipv6_cidr_blocks   = optional(list(string), [])
   }))
   description = "Ingress rules for the security groups."
-  default     = {}
+  default = [
+    {
+      description = "VPN ingress to 443"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+    }
+  ]
 }
 
 variable "client_vpn_egress_rules" {
-  type = map(object({
-    description       = optional(string)
-    from_port         = number
-    to_port           = number
-    protocol          = string
-    cidr_blocks       = optional(list(string))
-    security_group_id = optional(list(string))
-    ipv6_cidr_blocks  = optional(list(string))
+  type = list(object({
+    description        = optional(string, "")
+    from_port          = number
+    to_port            = number
+    protocol           = any
+    cidr_blocks        = optional(list(string), [])
+    security_group_ids = optional(list(string), [])
+    ipv6_cidr_blocks   = optional(list(string), [])
   }))
   description = "Egress rules for the security groups."
-  default     = {}
+  default = [
+    {
+      description = "VPN egress to internet"
+      from_port   = 0
+      to_port     = 0
+      protocol    = -1
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
 }
 
 ################################################################################
@@ -52,38 +66,27 @@ variable "create_self_signed_server_cert" {
   default     = true
 }
 
-variable "self_signed_server_cert_name" {
+variable "self_signed_server_cert_secret_path_format" {
+  description = "The path format to use when writing secrets to the certificate backend."
   type        = string
-  description = "Name to assign the Self-Signed certificate for the VPN Server."
-  default     = "client-vpn-server-self-signed-certificate"
-}
+  default     = "/%s.%s"
 
-variable "self_signed_server_cert_subject" {
-  description = <<-EOT
-    The subject configuration for the certificate.
-    This should be a map that is compatible with [tls_cert_request.subject](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/cert_request#subject).
-  EOT
-  type        = any
-  default     = {}
-}
-
-variable "self_signed_server_cert_validity" {
-  description = <<-EOT
-    Validity settings for the issued certificate:
-
-    `duration_hours`: The number of hours from issuing the certificate until it becomes invalid.
-    `early_renewal_hours`: If set, the resource will consider the certificate to have expired the given number of hours before its actual expiry time (see: [self_signed_cert.early_renewal_hours](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/self_signed_cert#early_renewal_hours)).
-
-    Defaults to 10 years and no early renewal hours.
-  EOT
-  type = object({
-    duration_hours      = number
-    early_renewal_hours = number
-  })
-  default = {
-    duration_hours      = 87600
-    early_renewal_hours = null
+  validation {
+    condition     = can(substr(var.self_signed_server_cert_secret_path_format, 0, 1) == "/")
+    error_message = "The secret path format must contain a leading slash."
   }
+}
+
+variable "self_signed_server_cert_server_common_name" {
+  type        = string
+  description = "Common name to assign the server certificate"
+  default     = ""
+}
+
+variable "self_signed_server_cert_organization_name" {
+  type        = string
+  description = "Organization name to assign the server certificate"
+  default     = ""
 }
 
 variable "self_signed_server_cert_allowed_uses" {
@@ -99,22 +102,17 @@ variable "self_signed_server_cert_allowed_uses" {
   ]
 }
 
-variable "self_signed_server_cert_subject_alt_names" {
-  description = <<-EOT
-    The subject alternative name (SAN) configuration for the certificate. This configuration consists of several lists, each of which can also be set to `null` or `[]`.
+variable "self_signed_server_cert_ca_pem" {
+  type        = string
+  description = "Server certificate CA PEM"
+  default     = ""
+}
 
-    `dns_names`: List of DNS names for which a certificate is being requested.
-    `ip_addresses`: List of IP addresses for which a certificate is being requested.
-    `uris`: List of URIs for which a certificate is being requested.
-
-    Defaults to no SANs.
-  EOT
-  type = object({
-    dns_names    = optional(list(string), null)
-    ip_addresses = optional(list(string), null)
-    uris         = optional(list(string), null)
-  })
-  default = {}
+variable "self_signed_server_cert_private_ca_key_pem" {
+  type        = string
+  description = "Server certificate Private Key PEM"
+  sensitive   = true
+  default     = ""
 }
 
 ################################################################################
@@ -123,7 +121,6 @@ variable "self_signed_server_cert_subject_alt_names" {
 variable "client_vpn_name" {
   type        = string
   description = "The name of the client vpn"
-  default     = "client-vpn-01"
 }
 
 ## gateway
@@ -142,7 +139,7 @@ variable "iam_saml_provider_enabled" {
 variable "iam_saml_provider_name" {
   type        = string
   description = "The name of the IAM SAML Provider"
-  default     = ""
+  default     = null
 }
 
 variable "saml_metadata_document_content" {
@@ -221,7 +218,6 @@ variable "authentication_options_type" {
     Specify certificate-authentication to use certificate-based authentication, directory-service-authentication to use Active Directory authentication,
     or federated-authentication to use Federated Authentication via SAML 2.0.
   EOT
-  default     = "federated-authentication"
 }
 
 variable "client_server_certificate_arn" {
@@ -240,4 +236,28 @@ variable "client_vpn_additional_security_group_ids" {
   type        = list(string)
   description = "Additional IDs of security groups to add to the target network."
   default     = []
+}
+
+## network associations
+variable "client_vpn_subnet_ids" {
+  type        = list(string)
+  description = "The ID of the subnets to associate with the Client VPN endpoint."
+}
+
+## authorization
+variable "client_vpn_target_network_cidr" {
+  type        = string
+  description = "The IPv4 address range, in CIDR notation, of the network to which the authorization rule applies."
+}
+
+variable "client_vpn_access_group_id" {
+  type        = string
+  description = "The ID of the group to which the authorization rule grants access. One of access_group_id or authorize_all_groups must be set."
+  default     = null
+}
+
+variable "client_vpn_authorize_all_groups" {
+  type        = bool
+  description = "Indicates whether the authorization rule grants access to all clients. One of access_group_id or authorize_all_groups must be set."
+  default     = true
 }

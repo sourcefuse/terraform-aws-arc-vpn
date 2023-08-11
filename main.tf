@@ -29,9 +29,8 @@ resource "aws_security_group" "vpn" {
       to_port          = ingress.value.to_port
       protocol         = ingress.value.protocol
       cidr_blocks      = ingress.value.cidr_blocks
-      security_groups  = ingress.value.security_group_id != null ? ingress.value.security_group_id : []
+      security_groups  = ingress.value.security_group_ids
       ipv6_cidr_blocks = ingress.value.ipv6_cidr_blocks
-      self             = ingress.value.self
     }
   }
 
@@ -44,7 +43,7 @@ resource "aws_security_group" "vpn" {
       to_port          = egress.value.to_port
       protocol         = egress.value.protocol
       cidr_blocks      = egress.value.cidr_blocks
-      security_groups  = egress.value.security_group_id != null ? egress.value.security_group_id : []
+      security_groups  = egress.value.security_group_ids
       ipv6_cidr_blocks = egress.value.ipv6_cidr_blocks
     }
   }
@@ -65,14 +64,29 @@ module "self_signed_cert" {
   source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
   count  = var.create_self_signed_server_cert == true ? 1 : 0
 
-  name = var.self_signed_server_cert_name
+  attributes         = ["self", "signed", "cert", "server"]
+  secret_path_format = var.self_signed_server_cert_secret_path_format
 
-  subject  = var.self_signed_server_cert_subject
-  validity = var.self_signed_server_cert_validity
+  subject = {
+    common_name  = var.self_signed_server_cert_server_common_name
+    organization = var.self_signed_server_cert_organization_name
+  }
+  basic_constraints = {
+    ca = false
+  }
 
   allowed_uses = var.self_signed_server_cert_allowed_uses
 
-  subject_alt_names = var.self_signed_server_cert_subject_alt_names
+  certificate_backends = ["ACM", "SSM"]
+
+  use_locally_signed = true
+
+  certificate_chain = {
+    cert_pem        = var.self_signed_server_cert_ca_pem
+    private_key_pem = var.self_signed_server_cert_private_ca_key_pem
+  }
+
+  tags = var.tags
 }
 
 ################################################################################
@@ -123,11 +137,30 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
   }
 
   ## security
-  server_certificate_arn = var.create_self_signed_server_cert == true ? module.self_signed_cert.certificate_arn : var.client_server_certificate_arn
+  server_certificate_arn = length(module.self_signed_cert) > 0 ? one(module.self_signed_cert[*].certificate_arn) : var.client_server_certificate_arn
   transport_protocol     = var.client_server_transport_protocol
-  security_group_ids     = concat(aws_security_group.vpn.id, var.client_vpn_additional_security_group_ids)
+  security_group_ids     = concat([aws_security_group.vpn.id], var.client_vpn_additional_security_group_ids)
+
+  depends_on = [
+    module.self_signed_cert
+  ]
 
   tags = merge(var.tags, tomap({
     Name = var.client_vpn_name
   }))
+}
+
+## associations
+resource "aws_ec2_client_vpn_network_association" "this" {
+  for_each = toset(var.client_vpn_subnet_ids)
+
+  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
+  subnet_id              = each.value
+}
+
+resource "aws_ec2_client_vpn_authorization_rule" "this" {
+  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
+  target_network_cidr    = var.client_vpn_target_network_cidr
+  access_group_id        = var.client_vpn_access_group_id
+  authorize_all_groups   = var.client_vpn_authorize_all_groups
 }

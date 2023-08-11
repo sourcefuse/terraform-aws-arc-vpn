@@ -16,9 +16,30 @@ variable "namespace" {
 ################################################################################
 ## lookups
 ################################################################################
-variable "vpc_name" {
+variable "vpc_name_override" {
   type        = string
   description = "The name of the target network VPC."
+  default     = null
+}
+
+variable "private_subnet_names_override" {
+  type        = list(string)
+  description = "The name of the subnets to associate to the VPN."
+  default     = []
+}
+
+################################################################################
+## certs
+################################################################################
+variable "secret_path_format" {
+  description = "The path format to use when writing secrets to the certificate backend."
+  type        = string
+  default     = "/%s.%s"
+
+  validation {
+    condition     = can(substr(var.secret_path_format, 0, 1) == "/")
+    error_message = "The secret path format must contain a leading slash."
+  }
 }
 
 ################################################################################
