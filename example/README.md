@@ -12,7 +12,7 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.12.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.11.0 |
 
 ## Modules
 
@@ -45,5 +45,10 @@
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_client_vpn_arn"></a> [client\_vpn\_arn](#output\_client\_vpn\_arn) | The client vpn ARN |
+| <a name="output_client_vpn_auth_root_certificate_arn"></a> [client\_vpn\_auth\_root\_certificate\_arn](#output\_client\_vpn\_auth\_root\_certificate\_arn) | n/a |
+| <a name="output_client_vpn_id"></a> [client\_vpn\_id](#output\_client\_vpn\_id) | The client vpn ID |
+| <a name="output_client_vpn_server_certificate_arn"></a> [client\_vpn\_server\_certificate\_arn](#output\_client\_vpn\_server\_certificate\_arn) | n/a |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
