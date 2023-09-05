@@ -9,6 +9,6 @@ output "client_vpn_id" {
 }
 
 output "client_self_signed_cert_server_certificate_arn" {
-  value = module.vpn.client_self_signed_cert_server_certificate_arn
+  value       = module.vpn.client_self_signed_cert_server_certificate_arn
   description = "Self signed certificate server certificate ARN"
 }

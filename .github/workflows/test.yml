@@ -16,8 +16,7 @@ concurrency:
 
 jobs:
   tflint:
-    runs-on:
-      - arc
+    runs-on: ubuntu-latest
     name: tflint
     steps:
       - uses: actions/checkout@master
@@ -36,8 +35,7 @@ jobs:
         run: tflint -f compact
 
   security:
-    runs-on:
-      - arc
+    runs-on: ubuntu-latest
     name: snyk
     steps:
       - name: checkout
