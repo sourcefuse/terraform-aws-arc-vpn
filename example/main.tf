@@ -17,7 +17,8 @@ provider "aws" {
 }
 
 module "tags" {
-  source = "git::https://github.com/sourcefuse/terraform-aws-refarch-tags.git?ref=1.2.1"
+  source  = "sourcefuse/arc-tags/aws"
+  version = "1.2.3"
 
   environment = var.environment
   project     = var.project_name
@@ -126,7 +127,8 @@ module "self_signed_cert_root" {
 ## vpn
 ################################################################################
 module "vpn" {
-  source = "../"
+  source  = "sourcefuse/arc-vpn/aws"
+  version = "0.0.4"
 
   vpc_id = data.aws_vpc.this.id
 
