@@ -9,6 +9,6 @@ output "client_vpn_id" {
 }
 
 output "client_self_signed_cert_server_certificate_arn" {
-  value       = var.create_self_signed_server_cert ? module.self_signed_cert[*].certificate_arn : null
+  value       = var.create_self_signed_server_cert == true ? one(module.self_signed_cert[*].certificate_arn)  : null
   description = "Self signed certificate server certificate ARN"
 }
