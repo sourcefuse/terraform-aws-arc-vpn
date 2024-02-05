@@ -1,5 +1,5 @@
 # Contributing to AWS ARC Client VPN
-Thank you for considering contributing to AWS ARC Billing! We appreciate your time and effort.
+Thank you for considering contributing to AWS ARC CLient VPN! We appreciate your time and effort.
 To ensure a smooth collaboration, please take a moment to review the following guidelines.
 
 ## How to Contribute
