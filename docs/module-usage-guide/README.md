@@ -6,7 +6,7 @@
 
 This document provides guidelines and instructions for users looking to implement Terraform ARC module for managing a AWS Client VPN.
 
-#### What is AWS Client VPN ? 
+#### What is AWS Client VPN ?
 AWS Client VPN is a managed remote access VPN solution used by your remote workforce to securely access resources within both AWS and your on-premises network. Fully elastic, it automatically scales up, or down, based on demand.
 
 ### Module Overview
@@ -51,7 +51,7 @@ Integrate the module with your existing Terraform mono repo configuration, follo
 
 ### Required AWS Permissions
 
-Ensure that the AWS credentials used to execute Terraform have the necessary permissions to create 
+Ensure that the AWS credentials used to execute Terraform have the necessary permissions to create
  - Client VPN Endpoint
  - Virtual Private Gateway
 

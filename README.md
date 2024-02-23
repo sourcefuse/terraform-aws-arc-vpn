@@ -100,6 +100,7 @@ module "this" {
 | <a name="input_client_vpn_subnet_ids"></a> [client\_vpn\_subnet\_ids](#input\_client\_vpn\_subnet\_ids) | The ID of the subnets to associate with the Client VPN endpoint. | `list(string)` | n/a | yes |
 | <a name="input_client_vpn_target_network_cidr"></a> [client\_vpn\_target\_network\_cidr](#input\_client\_vpn\_target\_network\_cidr) | The IPv4 address range, in CIDR notation, of the network to which the authorization rule applies. | `string` | n/a | yes |
 | <a name="input_create_self_signed_server_cert"></a> [create\_self\_signed\_server\_cert](#input\_create\_self\_signed\_server\_cert) | Create a self signed certificate to use for the VPN server. | `bool` | `true` | no |
+| <a name="input_create_vpn_gateway"></a> [create\_vpn\_gateway](#input\_create\_vpn\_gateway) | Whether to create VPN Gateway, as for a VPC only one Gateway is allowed | `bool` | `true` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | The list of dns server ip address | `list(string)` | <pre>[<br>  "1.1.1.1",<br>  "1.0.0.1"<br>]</pre> | no |
 | <a name="input_iam_saml_provider_enabled"></a> [iam\_saml\_provider\_enabled](#input\_iam\_saml\_provider\_enabled) | Enable the SAML provider for SSO login to Client VPN. If enabled, `var.iam_saml_provider_name` and `var.saml_metadata_document_content` must be set. | `bool` | `false` | no |
 | <a name="input_iam_saml_provider_name"></a> [iam\_saml\_provider\_name](#input\_iam\_saml\_provider\_name) | The name of the IAM SAML Provider | `string` | `null` | no |

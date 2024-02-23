@@ -67,7 +67,7 @@ module "self_signed_cert" {
   attributes         = ["self", "signed", "cert", "server"]
   secret_path_format = var.self_signed_server_cert_secret_path_format
 
-   name = var.client_vpn_name
+  name = var.client_vpn_name
 
 
   subject = {
@@ -96,7 +96,7 @@ module "self_signed_cert" {
 ## vpn
 ################################################################################
 resource "aws_vpn_gateway" "this" {
-  count = var.create_vpn_gateway ? 1 : 0
+  count  = var.create_vpn_gateway ? 1 : 0
   vpc_id = var.vpc_id
 
   tags = merge(var.tags, tomap({

@@ -105,7 +105,7 @@ module "self_signed_cert_root" {
   attributes = ["self", "signed", "cert", "root"]
 
   namespace = var.namespace
-  stage     = var.environment   
+  stage     = var.environment
   name      = "demo"
 
   secret_path_format = var.secret_path_format
@@ -141,7 +141,7 @@ module "self_signed_cert_root" {
 ################################################################################
 module "vpn" {
   source  = "sourcefuse/arc-vpn/aws"
-  //version = "1.0.0" # pin the correct version
+  version = "1.0.0" # pin the correct version
 
   vpc_id = data.aws_vpc.this.id
 
@@ -164,8 +164,6 @@ module "vpn" {
   client_cidr             = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
   client_vpn_name         = "${var.namespace}-${var.environment}-client-vpn-example"
   client_vpn_gateway_name = "${var.namespace}-${var.environment}-vpn-gateway-example"
-
-  create_vpn_gateway = true
 
   tags = module.tags.tags
 }

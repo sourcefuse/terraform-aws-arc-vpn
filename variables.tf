@@ -265,5 +265,5 @@ variable "client_vpn_authorize_all_groups" {
 variable "create_vpn_gateway" {
   type        = bool
   description = "Whether to create VPN Gateway, as for a VPC only one Gateway is allowed"
-  default     = true  
+  default     = true
 }
