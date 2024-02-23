@@ -261,3 +261,9 @@ variable "client_vpn_authorize_all_groups" {
   description = "Indicates whether the authorization rule grants access to all clients. One of access_group_id or authorize_all_groups must be set."
   default     = true
 }
+
+variable "create_vpn_gateway" {
+  type        = bool
+  description = "Whether to create VPN Gateway, as for a VPC only one Gateway is allowed"
+  default     = true  
+}

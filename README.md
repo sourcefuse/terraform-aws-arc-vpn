@@ -2,20 +2,22 @@
 
 [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=sourcefuse_terraform-aws-arc-vpn)](https://sonarcloud.io/summary/new_code?id=sourcefuse_terraform-aws-arc-vpn)
 
-[![Snyk](https://github.com/sourcefuse/terraform-aws-refarch-vpn/actions/workflows/test.yml/badge.svg)](https://github.com/sourcefuse/terraform-aws-refarch-vpn/actions/workflows/test.yml)
+[![Snyk](https://github.com/sourcefuse/terraform-aws-refarch-vpn/actions/workflows/test.yml/badge.svg)](https://github.com/sourcefuse/c/actions/workflows/test.yml)
 
 ## Overview
 
 SourceFuse AWS Reference Architecture (ARC) Terraform module for managing a Client VPN.
 
+For more information about this repository and its usage, please see [Terraform AWS ARC CloudFront Usage Guide](https://github.com/sourcefuse/terraform-aws-arc-vpn/blob/main/docs/module-usage-guide/README.md).
+
 ## Usage
 
 To see a full example, check out the [main.tf](https://github.com/sourcefuse/terraform-aws-arc-vpn/blob/main/example/main.tf) file in the example folder.
 
-```hcl
+```tcl
 module "this" {
   source  = "sourcefuse/arc-vpn/aws"
-  version = "0.0.4"
+  version = "1.0.0"
   vpc_id = data.aws_vpc.this.id
 
   authentication_options_type                       = "certificate-authentication"

@@ -60,9 +60,15 @@ data "aws_subnets" "private" {
 ## certs
 ################################################################################
 module "self_signed_cert_ca" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls- self-signed-cert.git?ref=1.3.0"
 
   attributes = ["self", "signed", "cert", "ca"]
+
+  enabled = true
+
+  namespace = var.namespace
+  stage     = var.environment
+  name      = "demo"
 
   secret_path_format = var.secret_path_format
 
@@ -94,7 +100,13 @@ data "aws_ssm_parameter" "ca_key" {
 module "self_signed_cert_root" {
   source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
 
+  enabled = true
+
   attributes = ["self", "signed", "cert", "root"]
+
+  namespace = var.namespace
+  stage     = var.environment   
+  name      = "demo"
 
   secret_path_format = var.secret_path_format
 
@@ -123,12 +135,13 @@ module "self_signed_cert_root" {
   }
 }
 
+
 ################################################################################
 ## vpn
 ################################################################################
 module "vpn" {
   source  = "sourcefuse/arc-vpn/aws"
-  version = "0.0.4"
+  //version = "1.0.0" # pin the correct version
 
   vpc_id = data.aws_vpc.this.id
 
@@ -151,6 +164,8 @@ module "vpn" {
   client_cidr             = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
   client_vpn_name         = "${var.namespace}-${var.environment}-client-vpn-example"
   client_vpn_gateway_name = "${var.namespace}-${var.environment}-vpn-gateway-example"
+
+  create_vpn_gateway = true
 
   tags = module.tags.tags
 }
