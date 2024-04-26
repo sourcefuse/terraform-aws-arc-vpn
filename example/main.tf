@@ -60,7 +60,7 @@ data "aws_subnets" "private" {
 ## certs
 ################################################################################
 module "self_signed_cert_ca" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls- self-signed-cert.git?ref=1.3.0"
+  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
 
   attributes = ["self", "signed", "cert", "ca"]
 
