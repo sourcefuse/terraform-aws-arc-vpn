@@ -1,16 +1,3 @@
-################################################################################
-## defaults
-################################################################################
-terraform {
-  required_version = ">= 1.4, < 2.0.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 4.0, < 6.0"
-    }
-  }
-}
 
 ################################################################################
 ## Client VPN
@@ -19,7 +6,9 @@ terraform {
 module "client_vpn" {
   source = "./modules/client-vpn"
 
-  name                   = var.client_vpn_config.name
+  count = var.client_vpn_config.create ? 1 : 0
+
+  name                   = var.name
   vpc_id                 = var.vpc_id
   client_cidr_block      = var.client_vpn_config.client_cidr_block
   self_signed_cert_data  = var.client_vpn_config.self_signed_cert_data
@@ -46,4 +35,22 @@ module "client_vpn" {
   subnet_ids = var.client_vpn_config.subnet_ids
 
   tags = var.tags
+}
+
+################################################################################
+## Site to Site Client VPN
+################################################################################
+
+module "aws_site_to_site_vpn" {
+  source = "./modules/site-to-site-vpn"
+
+  count = var.site_to_site_vpn_config.create ? 1 : 0
+
+  name                    = var.name
+  environment             = var.environment
+  namespace               = var.namespace
+  customer_gateway_config = var.site_to_site_vpn_config.customer_gateway
+  vpn_gateway_config      = var.site_to_site_vpn_config.vpn_gateway
+  vpn_connection_config   = var.site_to_site_vpn_config.vpn_connection
+  tags                    = var.tags
 }

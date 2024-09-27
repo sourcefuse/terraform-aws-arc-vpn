@@ -140,34 +140,16 @@ module "self_signed_cert_root" {
 ## vpn
 ################################################################################
 module "vpn" {
-  source = "../"
+  source = "../../"
   #version = "1.0.0" # pin the correct version
 
-  vpc_id = data.aws_vpc.this.id
-
-  # authentication_options_type                       = "certificate-authentication"
-  # authentication_options_root_certificate_chain_arn = module.self_signed_cert_root.certificate_arn
-
-  # ## access
-  # client_vpn_authorize_all_groups = true
-  # client_vpn_subnet_ids           = data.aws_subnets.private.ids
-  # client_vpn_target_network_cidr  = data.aws_vpc.this.cidr_block
-
-  # ## self signed certificate
-  # create_self_signed_server_cert             = true
-  # self_signed_server_cert_server_common_name = "${var.namespace}-${var.environment}.arc-vpn-example.client"
-  # self_signed_server_cert_organization_name  = var.namespace
-  # self_signed_server_cert_ca_pem             = module.self_signed_cert_ca.certificate_pem
-  # self_signed_server_cert_private_ca_key_pem = join("", data.aws_ssm_parameter.ca_key[*].value)
-
-  # ## client vpn
-  # client_cidr             = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
-  # client_vpn_name         = "${var.namespace}-${var.environment}-client-vpn-example"
-  # client_vpn_gateway_name = "${var.namespace}-${var.environment}-vpn-gateway-example"
-
+  name        = "poc-dev-client-vpn-example"
+  namespace   = "poc"
+  environment = "dev"
+  vpc_id      = data.aws_vpc.this.id
 
   client_vpn_config = {
-    name              = "${var.namespace}-${var.environment}-client-vpn-example"
+
     client_cidr_block = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
     self_signed_cert_data = {
       create             = true
@@ -191,11 +173,8 @@ module "vpn" {
       }
     }
 
-    # VPN endpoint configurations
     split_tunnel = true
-
-    # Network associations
-    subnet_ids = data.aws_subnets.private.ids
+    subnet_ids   = data.aws_subnets.private.ids
   }
 
   tags = module.tags.tags
