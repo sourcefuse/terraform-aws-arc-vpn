@@ -69,7 +69,8 @@ variable "vpn_connection_config" {
         phase2_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 2 encryption algorithms for tunnel 1
         phase1_integrity_algorithms  = optional(list(string), ["SHA1", "SHA256"])   # Phase 1 integrity algorithms for tunnel 1
         phase2_integrity_algorithms  = optional(list(string), ["SHA1", "SHA256"])   # Phase 2 integrity algorithms for tunnel 1
-        log_group_arn                = optional(string, null)                       # null - log disabled
+        log_group_arn                = optional(string, null)
+        log_group_kms_arn            = optional(string, null) # null - log disabled
         log_enabled                  = optional(bool, false)
         log_output_format            = optional(string, "json")
         log_retention_in_days        = optional(number, 7)
@@ -84,6 +85,7 @@ variable "vpn_connection_config" {
         phase2_integrity_algorithms  = optional(list(string), ["SHA1", "SHA256"])   # Phase 2 integrity algorithms for tunnel 2
         log_enabled                  = optional(bool, false)
         log_group_arn                = optional(string, null)
+        log_group_kms_arn            = optional(string, null)
         log_output_format            = optional(string, "json")
         log_retention_in_days        = optional(number, 7)
       })

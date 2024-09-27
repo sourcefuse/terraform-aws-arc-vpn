@@ -104,10 +104,12 @@ resource "aws_cloudwatch_log_group" "tunnel1" {
   count             = var.vpn_connection_config.tunnel_config.tunnel1.log_enabled ? 1 : 0
   name              = "${local.prefix}-${var.name}-tunnel1"
   retention_in_days = var.vpn_connection_config.tunnel_config.tunnel1.log_retention_in_days
+  kms_key_id        = var.vpn_connection_config.tunnel_config.tunnel2.log_group_kms_arn
 }
 
 resource "aws_cloudwatch_log_group" "tunnel2" {
   count             = var.vpn_connection_config.tunnel_config.tunnel2.log_enabled ? 1 : 0
   name              = "${local.prefix}-${var.name}-tunnel2"
   retention_in_days = var.vpn_connection_config.tunnel_config.tunnel2.log_retention_in_days
+  kms_key_id        = var.vpn_connection_config.tunnel_config.tunnel2.log_group_kms_arn
 }
