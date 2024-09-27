@@ -6,7 +6,7 @@
 
 [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=sourcefuse_terraform-aws-arc-vpn)](https://sonarcloud.io/summary/new_code?id=sourcefuse_terraform-aws-arc-vpn)
 
-[![Snyk](https://github.com/sourcefuse/terraform-aws-refarch-vpn/actions/workflows/test.yml/badge.svg)](https://github.com/sourcefuse/c/actions/workflows/test.yml)
+[![Known Vulnerabilities](https://github.com/sourcefuse/terraform-aws-arc-transit-gateway/actions/workflows/snyk.yaml/badge.svg)](https://github.com/sourcefuse/terraform-aws-arc-transit-gateway/actions/workflows/snyk.yaml)
 
 ## Overview
 
