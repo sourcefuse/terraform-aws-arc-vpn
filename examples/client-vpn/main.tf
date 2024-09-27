@@ -140,30 +140,42 @@ module "self_signed_cert_root" {
 ## vpn
 ################################################################################
 module "vpn" {
-  source  = "sourcefuse/arc-vpn/aws"
-  version = "1.0.0" # pin the correct version
+  source = "../../"
+  #version = "1.0.0" # pin the correct version
 
-  vpc_id = data.aws_vpc.this.id
+  name        = "poc-dev-client-vpn-example"
+  namespace   = "poc"
+  environment = "dev"
+  vpc_id      = data.aws_vpc.this.id
 
-  authentication_options_type                       = "certificate-authentication"
-  authentication_options_root_certificate_chain_arn = module.self_signed_cert_root.certificate_arn
+  client_vpn_config = {
 
-  ## access
-  client_vpn_authorize_all_groups = true
-  client_vpn_subnet_ids           = data.aws_subnets.private.ids
-  client_vpn_target_network_cidr  = data.aws_vpc.this.cidr_block
+    client_cidr_block = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
+    self_signed_cert_data = {
+      create             = true
+      secret_path_format = "/%s.%s"
+      server_common_name = "${var.namespace}-${var.environment}.arc-vpn-example.client"
+      organization_name  = var.namespace
+      ca_pem             = module.self_signed_cert_ca.certificate_pem
+      private_ca_key_pem = data.aws_ssm_parameter.ca_key.value
+    }
+    authentication_options = [
+      {
+        root_certificate_chain_arn = module.self_signed_cert_root.certificate_arn
+        type                       = "certificate-authentication"
+      }
+    ]
+    authorization_options = {
+      "auth-1" = {
+        target_network_cidr  = data.aws_vpc.this.cidr_block
+        access_group_id      = null
+        authorize_all_groups = true
+      }
+    }
 
-  ## self signed certificate
-  create_self_signed_server_cert             = true
-  self_signed_server_cert_server_common_name = "${var.namespace}-${var.environment}.arc-vpn-example.client"
-  self_signed_server_cert_organization_name  = var.namespace
-  self_signed_server_cert_ca_pem             = module.self_signed_cert_ca.certificate_pem
-  self_signed_server_cert_private_ca_key_pem = join("", data.aws_ssm_parameter.ca_key[*].value)
-
-  ## client vpn
-  client_cidr             = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
-  client_vpn_name         = "${var.namespace}-${var.environment}-client-vpn-example"
-  client_vpn_gateway_name = "${var.namespace}-${var.environment}-vpn-gateway-example"
+    split_tunnel = true
+    subnet_ids   = data.aws_subnets.private.ids
+  }
 
   tags = module.tags.tags
 }

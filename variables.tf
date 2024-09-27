@@ -1,6 +1,21 @@
 ################################################################################
 ## shared
 ################################################################################
+variable "environment" {
+  type        = string
+  description = "Environmenr name"
+}
+
+variable "namespace" {
+  description = "Namespace name"
+  type        = string
+}
+
+variable "name" {
+  type        = string
+  description = "Name of Client VPN or Site to site VPN"
+}
+
 variable "tags" {
   type        = map(string)
   description = "Default tags to apply to every applicable resource"
@@ -11,259 +26,193 @@ variable "vpc_id" {
   description = "The ID of the target network VPC"
 }
 
-################################################################################
-## security
-################################################################################
-variable "client_vpn_ingress_rules" {
-  type = list(object({
-    description        = optional(string, "")
-    from_port          = number
-    to_port            = number
-    protocol           = any
-    cidr_blocks        = optional(list(string), [])
-    security_group_ids = optional(list(string), [])
-    ipv6_cidr_blocks   = optional(list(string), [])
-  }))
-  description = "Ingress rules for the security groups."
-  default = [
-    {
-      description = "VPN ingress to 443"
-      from_port   = 443
-      to_port     = 443
-      protocol    = "tcp"
-    }
-  ]
-}
-
-variable "client_vpn_egress_rules" {
-  type = list(object({
-    description        = optional(string, "")
-    from_port          = number
-    to_port            = number
-    protocol           = any
-    cidr_blocks        = optional(list(string), [])
-    security_group_ids = optional(list(string), [])
-    ipv6_cidr_blocks   = optional(list(string), [])
-  }))
-  description = "Egress rules for the security groups."
-  default = [
-    {
-      description = "VPN egress to internet"
-      from_port   = 0
-      to_port     = 0
-      protocol    = -1
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  ]
-}
-
-################################################################################
-## certs
-################################################################################
-variable "create_self_signed_server_cert" {
-  type        = bool
-  description = "Create a self signed certificate to use for the VPN server."
-  default     = true
-}
-
-variable "self_signed_server_cert_secret_path_format" {
-  description = "The path format to use when writing secrets to the certificate backend."
-  type        = string
-  default     = "/%s.%s"
-
-  validation {
-    condition     = can(substr(var.self_signed_server_cert_secret_path_format, 0, 1) == "/")
-    error_message = "The secret path format must contain a leading slash."
-  }
-}
-
-variable "self_signed_server_cert_server_common_name" {
-  type        = string
-  description = "Common name to assign the server certificate"
-  default     = ""
-}
-
-variable "self_signed_server_cert_organization_name" {
-  type        = string
-  description = "Organization name to assign the server certificate"
-  default     = ""
-}
-
-variable "self_signed_server_cert_allowed_uses" {
-  description = <<-EOT
-    List of keywords each describing a use that is permitted for the issued certificate.
-    Must be one of of the values outlined in [self_signed_cert.allowed_uses](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/self_signed_cert#allowed_uses).
-  EOT
-  type        = list(string)
-  default = [
-    "key_encipherment",
-    "digital_signature",
-    "server_auth"
-  ]
-}
-
-variable "self_signed_server_cert_ca_pem" {
-  type        = string
-  description = "Server certificate CA PEM"
-  default     = ""
-}
-
-variable "self_signed_server_cert_private_ca_key_pem" {
-  type        = string
-  description = "Server certificate Private Key PEM"
-  sensitive   = true
-  default     = ""
-}
-
-################################################################################
-## vpn
-################################################################################
-variable "client_vpn_name" {
-  type        = string
-  description = "The name of the client vpn"
-}
-
-## gateway
-variable "client_vpn_gateway_name" {
-  type        = string
-  description = "The name of the client vpn gateway."
-}
-
-## saml provider
-variable "iam_saml_provider_enabled" {
-  type        = bool
-  description = "Enable the SAML provider for SSO login to Client VPN. If enabled, `var.iam_saml_provider_name` and `var.saml_metadata_document_content` must be set."
-  default     = false
-}
-
-variable "iam_saml_provider_name" {
-  type        = string
-  description = "The name of the IAM SAML Provider"
-  default     = null
-}
-
-variable "saml_metadata_document_content" {
-  type        = string
-  description = "The content of the saml metadata document"
-  default     = null
-}
-
-## endpoint
-variable "client_cidr" {
-  type        = string
-  description = "The IPv4 address range, in CIDR notation, from which to assign client IP addresses."
-}
-
-variable "client_vpn_split_tunnel" {
-  type        = bool
-  description = "Indicates whether split-tunnel is enabled on VPN endpoint."
-  default     = true
-}
-
-variable "client_vpn_self_service_portal" {
-  type        = string
-  description = "Specify whether to enable the self-service portal for the Client VPN endpoint. Values can be enabled or disabled."
-  default     = "disabled"
-}
-
-variable "dns_servers" {
-  type        = list(string)
-  description = "The list of dns server ip address"
-  default = [
-    "1.1.1.1",
-    "1.0.0.1"
-  ]
-}
-
-variable "client_vpn_log_options" {
-  description = "Whether logging is enabled and where to send the logs output."
+variable "client_vpn_config" {
+  description = "VPN configuration options including certs and vpn settings"
   type = object({
-    enabled               = bool                   // Indicates whether connection logging is enabled
-    cloudwatch_log_stream = optional(string, null) // The name of the vpn client cloudwatch log stream
-    cloudwatch_log_group  = optional(string, null) // The name of the vpn client cloudwatch log group
+    create = optional(bool, false)
+    # certs
+    self_signed_cert_data = optional(object({
+      create             = optional(bool, true)
+      secret_path_format = optional(string, "/%s.%s")
+      server_common_name = optional(string, "")
+      organization_name  = optional(string, "")
+      allowed_uses = optional(list(string), [
+        "key_encipherment",
+        "digital_signature",
+        "server_auth"
+      ])
+      ca_pem             = optional(string, "")
+      private_ca_key_pem = optional(string, "")
+    }))
+
+
+    # vpn settings
+    iam_saml_provider_enabled      = optional(bool, false)
+    iam_saml_provider_name         = optional(string, null)
+    saml_metadata_document_content = optional(string, null)
+    client_cidr_block              = string
+    split_tunnel                   = optional(bool, true)
+    self_service_portal            = optional(string, "disabled")
+    dns_servers                    = optional(list(string), ["1.1.1.1", "1.0.0.1"])
+
+    # logging options
+    log_options = optional(object({
+      enabled               = bool
+      cloudwatch_log_stream = optional(string, null)
+      cloudwatch_log_group  = optional(string, null)
+      }), {
+      enabled = false
+    })
+
+    # authentication options
+    authentication_options = list(object({
+      active_directory_id            = optional(string, null)
+      root_certificate_chain_arn     = optional(string, null)
+      saml_provider_arn              = optional(string, null)
+      self_service_saml_provider_arn = optional(string, null)
+      type                           = string
+    }))
+
+    # server and transport protocol
+    client_server_certificate_arn    = optional(string, null)
+    client_server_transport_protocol = optional(string, "tcp")
+
+    # security and network associations
+    security_group_data = optional(object({
+      client_vpn_additional_security_group_ids = optional(list(string), [])
+      ingress_rules = list(object({
+        description        = optional(string, "")
+        from_port          = number
+        to_port            = number
+        protocol           = any
+        cidr_blocks        = optional(list(string), [])
+        security_group_ids = optional(list(string), [])
+        ipv6_cidr_blocks   = optional(list(string), [])
+      }))
+      egress_rules = list(object({
+        description        = optional(string, "")
+        from_port          = number
+        to_port            = number
+        protocol           = any
+        cidr_blocks        = optional(list(string), [])
+        security_group_ids = optional(list(string), [])
+        ipv6_cidr_blocks   = optional(list(string), [])
+      }))
+      }),
+      {
+        ingress_rules = [
+          {
+            description = "VPN ingress to 443"
+            from_port   = 443
+            to_port     = 443
+            protocol    = "tcp"
+          }
+        ]
+        egress_rules = [
+          {
+            description = "VPN egress to internet"
+            from_port   = 0
+            to_port     = 0
+            protocol    = -1
+            cidr_blocks = ["0.0.0.0/0"]
+          }
+        ]
+      }
+    )
+
+    subnet_ids = list(string)
+
+    # authorization options
+    authorization_options = map(object({
+      target_network_cidr  = string
+      access_group_id      = optional(string, null)
+      authorize_all_groups = optional(bool, true)
+    }))
   })
   default = {
-    enabled = false
+    create                 = false
+    authentication_options = null
+    authorization_options  = null
+    client_cidr_block      = null
+    subnet_ids             = []
   }
 }
 
-variable "authentication_options_active_directory_id" {
-  type        = string
-  description = "The ID of the Active Directory to be used for authentication if type is directory-service-authentication."
-  default     = null
-}
+variable "site_to_site_vpn_config" {
+  type = object({
+    create = optional(bool, false)
+    customer_gateway = object({
+      bgp_asn         = optional(number, 65000)     # The Border Gateway Protocol (BGP) Autonomous System Number (ASN) Value must be in 1 - 4294967294 range.
+      certificate_arn = optional(string, null)      # The Amazon Resource Name (ARN) for the customer gateway certificate.
+      device_name     = optional(string, null)      # A name for the customer gateway device.
+      ip_address      = string                      # The IP address of the customer gateway
+      type            = optional(string, "ipsec.1") # The type of VPN connection (e.g., 'ipsec.1')
+    })
 
-variable "authentication_options_root_certificate_chain_arn" {
-  type        = string
-  description = "The ARN of the client certificate. The certificate must be signed by a certificate authority (CA) and it must be provisioned in AWS Certificate Manager (ACM). Only necessary when type is set to certificate-authentication."
-  default     = null
-}
+    vpn_gateway = object({
+      create            = optional(bool, true)
+      vpc_id            = string                     # The VPC ID to create the VPN gateway in.
+      amazon_side_asn   = optional(number, null)     # The Autonomous System Number (ASN) for the Amazon side of the gateway.
+      availability_zone = optional(string, null)     # The Availability Zone for the VPN gateway.
+      route_table_ids   = optional(list(string), []) # This resource should not be used with a route table that has the propagating_vgws argument set. If that argument is set, any route propagation not explicitly listed in its value will be removed.
+    })
 
-variable "authentication_options_saml_provider_arn" {
-  type        = string
-  description = "The ARN of the IAM SAML identity provider if type is federated-authentication."
-  default     = null
-}
+    vpn_connection = object({
+      transit_gateway_id  = optional(string, null) # The ID of the transit gateway
+      static_routes_only  = optional(bool, false)  # If true, only static routes are used
+      enable_acceleration = optional(bool, null)   # (Optional, Default false) Indicate whether to enable acceleration for the VPN connection. Supports only EC2 Transit Gateway.
 
-variable "authentication_options_self_service_saml_provider_arn" {
-  type        = string
-  description = "The ARN of the IAM SAML identity provider for the self service portal if type is federated-authentication."
-  default     = null
-}
+      local_ipv4_network_cidr                 = optional(string, "0.0.0.0/0")  # The IPv4 CIDR on the customer gateway side
+      local_ipv6_network_cidr                 = optional(string, null)         # The IPv6 CIDR on the customer gateway side "::/0"
+      outside_ip_address_type                 = optional(string, "PublicIpv4") # Public or Private S2S VPN
+      remote_ipv4_network_cidr                = optional(string, "0.0.0.0/0")  # The IPv4 CIDR on the AWS side
+      remote_ipv6_network_cidr                = optional(string, null)         # The IPv6 CIDR on the AWS side "::/0"
+      transport_transit_gateway_attachment_id = optional(string, null)         # Transit Gateway attachment ID (required for PrivateIpv4)
 
-variable "authentication_options_type" {
-  type        = string
+      tunnel_config = object({
+        tunnel1 = object({
+          inside_cidr                  = string                                       # CIDR block of the first tunnel
+          preshared_key                = optional(string, null)                       # Pre-shared key for the first tunnel
+          phase1_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 1 encryption algorithms for tunnel 1
+          phase2_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 2 encryption algorithms for tunnel 1
+          phase1_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 1 integrity algorithms for tunnel 1
+          phase2_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 2 integrity algorithms for tunnel 1
+          log_group_arn                = optional(string, null)
+          log_group_kms_arn            = optional(string, null) # null - log disabled
+          log_enabled                  = optional(bool, false)
+          log_output_format            = optional(string, "json")
+          log_retention_in_days        = optional(number, 7)
+        })
+
+        tunnel2 = object({
+          inside_cidr                  = string                                       # CIDR block of the second tunnel
+          preshared_key                = optional(string, null)                       # Pre-shared key for the second tunnel
+          phase1_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 1 encryption algorithms for tunnel 2
+          phase2_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 2 encryption algorithms for tunnel 2
+          phase1_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 1 integrity algorithms for tunnel 2
+          phase2_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 2 integrity algorithms for tunnel 2
+          log_enabled                  = optional(bool, false)
+          log_group_arn                = optional(string, null)
+          log_group_kms_arn            = optional(string, null)
+          log_output_format            = optional(string, "json")
+          log_retention_in_days        = optional(number, 7)
+        })
+      })
+      # VPN routes configuration (only for static routes)
+      routes = optional(list(object({
+        destination_cidr_block = string # The CIDR block to route through the VPN
+      })), [])
+    })
+  })
+
   description = <<-EOT
-    The type of client authentication to be used.
-    Specify certificate-authentication to use certificate-based authentication, directory-service-authentication to use Active Directory authentication,
-    or federated-authentication to use Federated Authentication via SAML 2.0.
+    Configuration for AWS VPN setup combining customer gateway, VPN gateway, and VPN connection configurations. This structure provides a comprehensive approach to defining all necessary parameters for establishing a Site-to-Site VPN.
   EOT
-}
-
-variable "client_server_certificate_arn" {
-  type        = string
-  description = "The ARN of the ACM server certificate."
-  default     = null
-}
-
-variable "client_server_transport_protocol" {
-  type        = string
-  description = "The transport protocol to be used by the VPN session."
-  default     = "tcp"
-}
-
-variable "client_vpn_additional_security_group_ids" {
-  type        = list(string)
-  description = "Additional IDs of security groups to add to the target network."
-  default     = []
-}
-
-## network associations
-variable "client_vpn_subnet_ids" {
-  type        = list(string)
-  description = "The ID of the subnets to associate with the Client VPN endpoint."
-}
-
-## authorization
-variable "client_vpn_target_network_cidr" {
-  type        = string
-  description = "The IPv4 address range, in CIDR notation, of the network to which the authorization rule applies."
-}
-
-variable "client_vpn_access_group_id" {
-  type        = string
-  description = "The ID of the group to which the authorization rule grants access. One of access_group_id or authorize_all_groups must be set."
-  default     = null
-}
-
-variable "client_vpn_authorize_all_groups" {
-  type        = bool
-  description = "Indicates whether the authorization rule grants access to all clients. One of access_group_id or authorize_all_groups must be set."
-  default     = true
-}
-
-variable "create_vpn_gateway" {
-  type        = bool
-  description = "Whether to create VPN Gateway, as for a VPC only one Gateway is allowed"
-  default     = true
+  default = {
+    create           = false
+    customer_gateway = null
+    vpn_gateway      = null
+    vpn_connection   = null
+  }
+  sensitive = true
 }
