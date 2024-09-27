@@ -1,14 +1,14 @@
-output "client_vpn_arn" {
-  value       = module.vpn.client_vpn_arn
-  description = "The client vpn ARN"
+output "vpn_gateway_id" {
+  value       = module.vpn.vpn_gateway_id
+  description = "The VPN Gateway ID"
 }
 
-output "client_vpn_id" {
-  value       = module.vpn.client_vpn_id
-  description = "The client vpn ID"
+output "site_to_site_vpn_id" {
+  value       = module.vpn.site_to_site_vpn_id
+  description = "The site to site vpn ID"
 }
 
-output "client_self_signed_cert_server_certificate_arn" {
-  value       = module.vpn.client_self_signed_cert_server_certificate_arn
-  description = "Self signed certificate server certificate ARN"
+output "customer_gateway_id" {
+  value       = module.vpn.customer_gateway_id
+  description = "Customer Gateway ID"
 }

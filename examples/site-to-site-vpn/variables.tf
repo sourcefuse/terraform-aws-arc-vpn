@@ -13,18 +13,6 @@ variable "namespace" {
   default     = "arc"
 }
 
-################################################################################
-## lookups
-################################################################################
-variable "vpc_name_override" {
-  type        = string
-  description = "The name of the target network VPC."
-  default     = null
-}
-
-################################################################################
-## vpn
-################################################################################
 variable "environment" {
   description = "Name of the environment the resource belongs to."
   type        = string

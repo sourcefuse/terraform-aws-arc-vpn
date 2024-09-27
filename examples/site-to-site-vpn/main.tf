@@ -35,8 +35,8 @@ module "tags" {
 data "aws_vpc" "this" {
   filter {
     name = "tag:Name"
-    values = var.vpc_name_override != null ? [var.vpc_name_override] : [
-      "${var.namespace}-${var.environment}-vpc"
+    values = [
+      "aws-vpc-test-iac"
     ]
   }
 }
@@ -53,7 +53,50 @@ module "vpn" {
   environment = var.environment
   vpc_id      = data.aws_vpc.this.id
 
+  site_to_site_vpn_config = {
+    create = true
+    customer_gateway = {
+      bgp_asn     = 65000                          # The Border Gateway Protocol (BGP) Autonomous System Number (ASN) Value must be in 1 - 4294967294 range.
+      device_name = "Demo customer gateway device" # A name for the customer gateway device.
+      ip_address  = "52.90.63.124"                 # The IP address of the customer gateway
+    }
 
+    vpn_gateway = {
+      vpc_id          = data.aws_vpc.this.id
+      route_table_ids = ["rtb-0bacb41a2947c7b8c", "rtb-0362a413a6bdaca0e"]
+    }
+
+    vpn_connection = {
+      static_routes_only = true
+
+      local_ipv4_network_cidr  = "10.3.0.0/16"
+      remote_ipv4_network_cidr = "10.0.0.0/16"
+
+      tunnel_config = {
+        tunnel1 = {
+          inside_cidr           = null
+          log_enabled           = true
+          log_retention_in_days = 7
+        }
+
+        tunnel2 = {
+          inside_cidr           = null # CIDR block of the second tunnel
+          log_enabled           = true
+          log_retention_in_days = 7
+        }
+      }
+
+      // routes are valid when static_routes_only = true
+      routes = [
+        {
+          destination_cidr_block = "10.0.0.0/16"
+        },
+        {
+          destination_cidr_block = "10.3.0.0/16"
+        }
+      ]
+    }
+  }
 
   tags = module.tags.tags
 }

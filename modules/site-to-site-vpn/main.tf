@@ -63,7 +63,7 @@ resource "aws_vpn_connection" "this" {
     for_each = var.vpn_connection_config.tunnel_config.tunnel1.log_enabled ? [1] : []
     content {
       cloudwatch_log_options {
-        log_group_arn     = var.vpn_connection_config.tunnel_config.tunnel1.log_group_arn == null ? aws_cloudwatch_log_group.tunnel1.arn : var.vpn_connection_config.tunnel_config.tunnel1.log_group_arn
+        log_group_arn     = var.vpn_connection_config.tunnel_config.tunnel1.log_group_arn == null ? aws_cloudwatch_log_group.tunnel1[0].arn : var.vpn_connection_config.tunnel_config.tunnel1.log_group_arn
         log_output_format = var.vpn_connection_config.tunnel_config.tunnel1.log_output_format
         log_enabled       = var.vpn_connection_config.tunnel_config.tunnel1.log_enabled
       }
@@ -74,7 +74,7 @@ resource "aws_vpn_connection" "this" {
     for_each = var.vpn_connection_config.tunnel_config.tunnel2.log_enabled ? [1] : []
     content {
       cloudwatch_log_options {
-        log_group_arn     = var.vpn_connection_config.tunnel_config.tunnel2.log_group_arn == null ? aws_cloudwatch_log_group.tunnel2.arn : var.vpn_connection_config.tunnel_config.tunnel2.log_group_arn
+        log_group_arn     = var.vpn_connection_config.tunnel_config.tunnel2.log_group_arn == null ? aws_cloudwatch_log_group.tunnel2[0].arn : var.vpn_connection_config.tunnel_config.tunnel2.log_group_arn
         log_output_format = var.vpn_connection_config.tunnel_config.tunnel2.log_output_format
         log_enabled       = var.vpn_connection_config.tunnel_config.tunnel2.log_enabled
       }
@@ -91,13 +91,12 @@ resource "aws_vpn_connection" "this" {
 }
 
 # VPN connection routes (if static routes are enabled)
-# resource "aws_vpn_connection_route" "this" {
-#   count = length(var.vpn_connection_config.routes)
+resource "aws_vpn_connection_route" "this" {
+  for_each = { for obj in var.vpn_connection_config.routes : obj.destination_cidr_block => obj }
 
-#   destination_cidr_block = var.vpn_connection_config.routes[count.index].destination_cidr_block
-#   vpn_connection_id      = aws_vpn_connection.this.id
-# }
-
+  destination_cidr_block = each.key
+  vpn_connection_id      = aws_vpn_connection.this.id
+}
 
 # # VPN CloudWatch Logs
 resource "aws_cloudwatch_log_group" "tunnel1" {
@@ -112,4 +111,11 @@ resource "aws_cloudwatch_log_group" "tunnel2" {
   name              = "${local.prefix}-${var.name}-tunnel2"
   retention_in_days = var.vpn_connection_config.tunnel_config.tunnel2.log_retention_in_days
   kms_key_id        = var.vpn_connection_config.tunnel_config.tunnel2.log_group_kms_arn
+}
+
+resource "aws_vpn_gateway_route_propagation" "this" {
+  for_each = toset(var.vpn_gateway_config.route_table_ids)
+
+  vpn_gateway_id = aws_vpn_gateway.this[0].id
+  route_table_id = each.value
 }
