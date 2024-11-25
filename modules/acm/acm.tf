@@ -89,6 +89,10 @@ resource "aws_acm_certificate" "example" {
   certificate_body = tls_self_signed_cert.self_signed_cert[0].cert_pem
 }
 
+output "certificate_arn" {
+  value = aws_acm_certificate.example.arn
+  description = "The ARN of the certificate"
+}
 
 ######################################################################################
 
