@@ -47,37 +47,38 @@ resource "aws_security_group" "vpn" {
 ################################################################################
 ## certs
 ################################################################################
-module "self_signed_cert" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
-  count  = var.self_signed_cert_data.create == true ? 1 : 0
+# module "self_signed_cert" {
+#   source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+#   count  = var.self_signed_cert_data.create == true ? 1 : 0
 
-  attributes         = ["self", "signed", "cert", "server"]
-  secret_path_format = var.self_signed_cert_data.secret_path_format
+#   attributes         = ["self", "signed", "cert", "server"]
+#   secret_path_format = var.self_signed_cert_data.secret_path_format
 
-  name = var.name
+#   name = var.name
 
 
-  subject = {
-    common_name  = var.self_signed_cert_data.server_common_name
-    organization = var.self_signed_cert_data.organization_name
-  }
-  basic_constraints = {
-    ca = false
-  }
+#   subject = {
+#     common_name  = var.self_signed_cert_data.server_common_name
+#     organization = var.self_signed_cert_data.organization_name
+#   }
+#   basic_constraints = {
+#     ca = false
+#   }
 
-  allowed_uses = var.self_signed_cert_data.allowed_uses
+#   allowed_uses = var.self_signed_cert_data.allowed_uses
 
-  certificate_backends = ["ACM", "SSM"]
+#   certificate_backends = ["ACM", "SSM"]
 
-  use_locally_signed = true
+#   use_locally_signed = true
 
-  certificate_chain = {
-    cert_pem        = var.self_signed_cert_data.ca_pem
-    private_key_pem = var.self_signed_cert_data.private_ca_key_pem
-  }
+#   certificate_chain = {
+#     cert_pem        = var.self_signed_cert_data.ca_pem
+#     private_key_pem = var.self_signed_cert_data.private_ca_key_pem
+#   }
 
-  tags = var.tags
-}
+#   tags = var.tags
+# }
+
 
 resource "aws_iam_saml_provider" "this" {
   count = var.iam_saml_provider_enabled == true ? 1 : 0

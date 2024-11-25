@@ -89,7 +89,7 @@ data "aws_subnets" "private" {
 #   certificate_backends = ["SSM"]
 # }
 module "self_signed_cert_ca" {
-  source = "../../client-vpn"
+  source = "./../modules/client-vpn"
 
   # Variables for private key generation
   generate_private_key     = true
@@ -140,7 +140,7 @@ data "aws_ssm_parameter" "ca_key" {
 }
 
 module "self_signed_cert_root" {
-  source = "../../client-vpn"
+  source = "./../modules/client-vpn"
 
   enabled = true
 

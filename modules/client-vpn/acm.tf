@@ -125,18 +125,20 @@ variable "secret_path_format" {
 variable "certificate_name_prefix" {
   description = "The prefix for the certificate SSM parameter name."
   type        = string
+  default = "cert-name-prefix"
 }
 
 variable "private_key_name_prefix" {
   description = "The prefix for the private key SSM parameter name."
   type        = string
+  default = "key-prefix"
 }
 
-variable "tags" {
-  description = "Tags to apply to all resources."
-  type        = map(string)
-  default     = {}
-}
+# variable "tags" {
+#   description = "Tags to apply to all resources."
+#   type        = map(string)
+#   default     = {}
+# }
 
 
 
