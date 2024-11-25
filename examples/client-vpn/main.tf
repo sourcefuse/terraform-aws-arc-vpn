@@ -105,7 +105,11 @@ module "self_signed_cert_ca" {
   is_ca                      = true
   set_subject_key_id         = true
   set_authority_key_id       = true
-  allowed_uses               = ["key_cert_sign", "crl_sign"]
+  allowed_uses               = [
+  "cert_signing",  # Allow signing other certificates
+  "crl_signing"    # Allow signing certificate revocation lists
+  ]
+  
 
   # Certificate subject details
   subject_common_name         = "arc-test-refactor-vpn.com"
@@ -176,8 +180,9 @@ module "self_signed_cert_root" {
 
   # Allowed uses for the certificate
   allowed_uses = [
-    "key_cert_sign",  # Allow signing other certificates
-    "crl_sign"        # Allow signing certificate revocation lists
+    "key_encipherment",
+    "digital_signature",
+    "client_auth",
   ]
 
   # Subject details for the Root Certificate
