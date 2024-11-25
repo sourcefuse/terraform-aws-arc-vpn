@@ -134,11 +134,11 @@ variable "private_key_name_prefix" {
   default = "key-prefix"
 }
 
-# variable "tags" {
-#   description = "Tags to apply to all resources."
-#   type        = map(string)
-#   default     = {}
-# }
+variable "tags" {
+  description = "Tags to apply to all resources."
+  type        = map(string)
+  default     = {}
+}
 
 
 

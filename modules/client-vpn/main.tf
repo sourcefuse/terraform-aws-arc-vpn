@@ -44,40 +44,7 @@ resource "aws_security_group" "vpn" {
   }
 }
 
-################################################################################
-## certs
-################################################################################
-# module "self_signed_cert" {
-#   source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
-#   count  = var.self_signed_cert_data.create == true ? 1 : 0
 
-#   attributes         = ["self", "signed", "cert", "server"]
-#   secret_path_format = var.self_signed_cert_data.secret_path_format
-
-#   name = var.name
-
-
-#   subject = {
-#     common_name  = var.self_signed_cert_data.server_common_name
-#     organization = var.self_signed_cert_data.organization_name
-#   }
-#   basic_constraints = {
-#     ca = false
-#   }
-
-#   allowed_uses = var.self_signed_cert_data.allowed_uses
-
-#   certificate_backends = ["ACM", "SSM"]
-
-#   use_locally_signed = true
-
-#   certificate_chain = {
-#     cert_pem        = var.self_signed_cert_data.ca_pem
-#     private_key_pem = var.self_signed_cert_data.private_ca_key_pem
-#   }
-
-#   tags = var.tags
-# }
 
 
 resource "aws_iam_saml_provider" "this" {
@@ -89,6 +56,22 @@ resource "aws_iam_saml_provider" "this" {
   tags = merge(var.tags, tomap({
     Name = var.iam_saml_provider_name
   }))
+}
+
+module "certificate" {
+  source                  = "./acm"
+  generate_private_key    = var.generate_private_key
+  private_key             = var.private_key
+  private_key_algorithm   = var.private_key_algorithm
+  rsa_bits                = var.rsa_bits
+  ecdsa_curve             = var.ecdsa_curve
+  use_self_signed_cert    = var.use_self_signed_cert
+  certificate_validity_hours = var.certificate_validity_hours
+  allowed_uses            = var.allowed_uses
+  subject_common_name     = var.subject_common_name
+  subject_organization    = var.subject_organization
+  subject_country         = var.subject_country
+  additional_dns_names    = var.additional_dns_names
 }
 
 resource "aws_ec2_client_vpn_endpoint" "this" {
@@ -120,7 +103,7 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
   }
 
   ## security
-  server_certificate_arn = var.use_self_signed_cert ? tls_self_signed_cert.self_signed_cert[0].cert_pem : var.client_server_certificate_arn
+  server_certificate_arn = var.use_self_signed_cert ? module.certificate.certificate_pem : var.client_server_certificate_arn
   transport_protocol     = var.client_server_transport_protocol
   security_group_ids     = concat([aws_security_group.vpn.id], var.security_group_data.additional_security_group_ids)
 
