@@ -132,7 +132,7 @@ module "self_signed_cert_ca" {
 
 
 data "aws_ssm_parameter" "ca_key" {
-  name = module.self_signed_cert_ca.certificate_key_path
+  name = module.self_signed_cert_ca.key_path
 
   depends_on = [
     module.self_signed_cert_ca

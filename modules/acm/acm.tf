@@ -106,6 +106,7 @@ resource "aws_ssm_parameter" "private_key" {
   tags   = var.tags
 }
 
+
 variable "secret_extensions" {
   description = "Extensions for secret naming"
   type = object({
