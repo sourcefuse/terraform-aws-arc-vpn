@@ -132,13 +132,12 @@ module "self_signed_cert_ca" {
 
 
 data "aws_ssm_parameter" "ca_key" {
-  # name = module.self_signed_cert_ca.key_path
-  name = module.self_signed_cert_ca.private_key_name_prefix
-
+  name = module.self_signed_cert_ca.private_key_name
   depends_on = [
     module.self_signed_cert_ca
   ]
 }
+
 
 module "self_signed_cert_root" {
   source = "../../modules/acm"
