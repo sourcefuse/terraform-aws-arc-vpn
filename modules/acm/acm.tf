@@ -93,27 +93,17 @@ resource "aws_acm_certificate" "example" {
 ######################################################################################
 
 resource "aws_ssm_parameter" "certificate" {
-  # count = local.ssm_enabled ? 1 : 0
-
   name   = format(var.secret_path_format, var.certificate_name_prefix, var.secret_extensions.certificate)
   type   = "SecureString"
-  # key_id = local.certificate_backend_kms_key_id
-
-  value = var.use_locally_signed_cert ? tls_locally_signed_cert.local_cert[0].cert_pem : (var.use_self_signed_cert ? tls_self_signed_cert.self_signed_cert[0].cert_pem: aws_acm_certificate.example.certificate_arn)
-
-  tags = var.tags
+  value  = var.use_locally_signed_cert ? tls_locally_signed_cert.local_cert[0].cert_pem : (var.use_self_signed_cert ? tls_self_signed_cert.self_signed_cert[0].cert_pem : aws_acm_certificate.example.arn)
+  tags   = var.tags
 }
 
 resource "aws_ssm_parameter" "private_key" {
-  # count = local.ssm_enabled ? 1 : 0
-
   name   = format(var.secret_path_format, var.private_key_name_prefix, var.secret_extensions.private_key)
   type   = "SecureString"
-  # key_id = local.certificate_backend_kms_key_id
-
-  value = local.private_key_required ? tls_private_key.generated_key[0].private_key_pem : var.private_key
-
-  tags = var.tags
+  value  = local.private_key_required ? tls_private_key.generated_key[0].private_key_pem : var.private_key
+  tags   = var.tags
 }
 
 variable "secret_path_format" {
