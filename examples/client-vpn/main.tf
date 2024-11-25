@@ -142,38 +142,49 @@ data "aws_ssm_parameter" "ca_key" {
 module "self_signed_cert_root" {
   source = "../../modules/client-vpn"
 
-  enabled = true
+  # Generate Private Key Configuration
+  generate_private_key  = true
+  private_key           = ""
+  private_key_algorithm = "RSA"
+  rsa_bits              = 2048
+  ecdsa_curve           = null # Not applicable for RSA
 
-  attributes = ["self", "signed", "cert", "root"]
+  # Certificate Request and Self-Signed Certificate Configurations
+  create_certificate_request = false
+  use_self_signed_cert       = true
+  certificate_validity_hours = 8760  # Valid for 1 year
+  is_ca                      = true  # Marks as a Certificate Authority
+  set_subject_key_id         = true  # Enables subject key ID
+  set_authority_key_id       = true  # Enables authority key ID
 
-  namespace = var.namespace
-  stage     = var.environment
-  name      = "demo"
-
-  secret_path_format = var.secret_path_format
-
-  subject = {
-    common_name  = "${var.namespace}-${var.environment}.arc-vpn-example.client"
-    organization = var.namespace
-  }
-
-  basic_constraints = {
-    ca = false
-  }
-
+  # Allowed uses for the certificate
   allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "client_auth",
+    "key_cert_sign",  # Allow signing other certificates
+    "crl_sign"        # Allow signing certificate revocation lists
   ]
 
-  certificate_backends = ["ACM", "SSM"]
+  # Subject details for the Root Certificate
+  subject_common_name         = "arc-root-cert.example.com"
+  subject_organization        = "Example Organization"
+  subject_organizational_unit = "Root CA"
+  subject_locality            = "Example City"
+  subject_province            = "Example State"
+  subject_country             = "US"
 
-  use_locally_signed = true
+  # Additional Subject Alternative Names (SANs)
+  additional_dns_names    = ["root-ca.example.com"]
+  additional_ip_addresses = []
+  additional_uris         = []
 
-  certificate_chain = {
-    cert_pem        = module.self_signed_cert_ca.certificate_pem,
-    private_key_pem = join("", data.aws_ssm_parameter.ca_key[*].value)
+  # SSM Parameter Storage Configuration
+  secret_path_format      = "%s/%s"
+  certificate_name_prefix = "root-ca-cert"
+  private_key_name_prefix = "root-ca-key"
+
+  # Tags for resources
+  tags = {
+    Environment = "production"
+    Project     = "Root-CA"
   }
 }
 
