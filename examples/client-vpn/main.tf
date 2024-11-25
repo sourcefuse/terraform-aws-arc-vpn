@@ -136,7 +136,8 @@ module "self_signed_cert_ca" {
 
 
 data "aws_ssm_parameter" "ca_key" {
-  name = format(var.secret_path_format, var.certificate_name_prefix, var.secret_extensions.certificate)
+  # name = format(var.secret_path_format, var.certificate_name_prefix, var.secret_extensions.certificate)
+  name = "/arc/refactor/client/vpn/certificate"
   depends_on = [
     module.self_signed_cert_ca
   ]

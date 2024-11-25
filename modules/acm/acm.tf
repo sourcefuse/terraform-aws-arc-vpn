@@ -97,14 +97,16 @@ output "certificate_arn" {
 ######################################################################################
 
 resource "aws_ssm_parameter" "certificate" {
-  name   = format(var.secret_path_format, var.certificate_name_prefix, var.secret_extensions.certificate)
+  # name   = format(var.secret_path_format, var.certificate_name_prefix, var.secret_extensions.certificate)
+  name = "/arc/refactor/client/vpn/certificate"
   type   = "SecureString"
   value  = var.use_locally_signed_cert ? tls_locally_signed_cert.local_cert[0].cert_pem : (var.use_self_signed_cert ? tls_self_signed_cert.self_signed_cert[0].cert_pem : aws_acm_certificate.example.arn)
   tags   = var.tags
 }
 
 resource "aws_ssm_parameter" "private_key" {
-  name   = format(var.secret_path_format, var.private_key_name_prefix, var.secret_extensions.private_key)
+  # name   = format(var.secret_path_format, var.private_key_name_prefix, var.secret_extensions.private_key)
+  name = "/arc/refactor/client/vpn/key"
   type   = "SecureString"
   value  = local.private_key_required ? tls_private_key.generated_key[0].private_key_pem : var.private_key
   tags   = var.tags
