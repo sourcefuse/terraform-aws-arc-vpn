@@ -327,6 +327,6 @@ output "private_key_pem" {
   sensitive = true
 }
 
-output "certificate_pem" {
+output "certificate_pem_01" {
   value = var.use_locally_signed_cert ? (length(tls_locally_signed_cert.local_cert) > 0 ? tls_locally_signed_cert.local_cert[0].cert_pem : null) : (length(tls_self_signed_cert.self_signed_cert) > 0 ? tls_self_signed_cert.self_signed_cert[0].cert_pem : null)
 }
