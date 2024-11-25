@@ -59,35 +59,77 @@ data "aws_subnets" "private" {
 ################################################################################
 ## certs
 ################################################################################
+# module "self_signed_cert_ca" {
+#   source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+
+#   attributes = ["self", "signed", "cert", "ca"]
+
+#   enabled = true
+
+#   namespace = var.namespace
+#   stage     = var.environment
+#   name      = "demo"
+
+#   secret_path_format = var.secret_path_format
+
+#   subject = {
+#     common_name  = "${var.namespace}-${var.environment}"
+#     organization = var.namespace
+#   }
+
+#   basic_constraints = {
+#     ca = true
+#   }
+
+#   allowed_uses = [
+#     "crl_signing",
+#     "cert_signing",
+#   ]
+
+#   certificate_backends = ["SSM"]
+# }
 module "self_signed_cert_ca" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+  source = "../../client-vpn"
 
-  attributes = ["self", "signed", "cert", "ca"]
+  # Variables for private key generation
+  generate_private_key     = true
+  private_key              = ""
+  private_key_algorithm    = "RSA"
+  rsa_bits                 = 2048
+  ecdsa_curve              = "P256"
 
-  enabled = true
+  # Variables for certificate generation
+  create_certificate_request = false
+  use_self_signed_cert       = true
+  certificate_validity_hours = 8760 # 1 year
+  is_ca                      = true
+  set_subject_key_id         = true
+  set_authority_key_id       = true
+  allowed_uses               = ["key_cert_sign", "crl_sign"]
 
-  namespace = var.namespace
-  stage     = var.environment
-  name      = "demo"
+  # Certificate subject details
+  subject_common_name         = "arc-test-refactor-vpn.com"
+  subject_organization        = "Example Org"
+  subject_organizational_unit = "Example Unit"
+  subject_locality            = "Example City"
+  subject_province            = "Example State"
+  subject_country             = "US"
 
-  secret_path_format = var.secret_path_format
+  # Additional SAN entries
+  additional_dns_names    = []
+  additional_ip_addresses = []
+  additional_uris         = []
 
-  subject = {
-    common_name  = "${var.namespace}-${var.environment}"
-    organization = var.namespace
+  # SSM parameter configurations
+  secret_path_format         = "%s/%s"
+  certificate_name_prefix    = "vpn-ca-cert-arc"
+  private_key_name_prefix    = "vpn-ca-key-arc"
+  tags                       = {
+    Environment = "re-factor-arc"
+    Project     = "VPN"
   }
-
-  basic_constraints = {
-    ca = true
-  }
-
-  allowed_uses = [
-    "crl_signing",
-    "cert_signing",
-  ]
-
-  certificate_backends = ["SSM"]
 }
+
 
 data "aws_ssm_parameter" "ca_key" {
   name = module.self_signed_cert_ca.certificate_key_path
@@ -98,7 +140,7 @@ data "aws_ssm_parameter" "ca_key" {
 }
 
 module "self_signed_cert_root" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+  source = "../../client-vpn"
 
   enabled = true
 
