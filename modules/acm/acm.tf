@@ -106,6 +106,18 @@ resource "aws_ssm_parameter" "private_key" {
   tags   = var.tags
 }
 
+variable "secret_extensions" {
+  description = "Extensions for secret naming"
+  type = object({
+    certificate = string
+    private_key = string
+  })
+  default = {
+    certificate = "cert"
+    private_key = "key"
+  }
+}
+
 variable "secret_path_format" {
   description = "The format for the secret path."
   type        = string
