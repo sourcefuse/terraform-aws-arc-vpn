@@ -59,7 +59,7 @@ resource "aws_iam_saml_provider" "this" {
 }
 
 module "certificate" {
-  source                  = "./acm"
+  source                  = "../acm"
   generate_private_key    = var.generate_private_key
   private_key             = var.private_key
   private_key_algorithm   = var.private_key_algorithm

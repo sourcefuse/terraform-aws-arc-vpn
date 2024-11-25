@@ -184,11 +184,6 @@ variable "client_cidr_block" {
 
 
 ##### ACM ##
-variable "use_self_signed_cert" {
-  description = "Whether to use a self-signed certificate"
-  type        = bool
-  default     = true
-}
 
 variable "secret_path_format" {
   description = "The format for the secret path."
