@@ -132,12 +132,29 @@ module "self_signed_cert_ca" {
 
 
 data "aws_ssm_parameter" "ca_key" {
-  name = module.self_signed_cert_ca.private_key_name
+  name = format(var.secret_path_format, var.certificate_name_prefix, var.secret_extensions.certificate)
   depends_on = [
     module.self_signed_cert_ca
   ]
 }
 
+variable "certificate_name_prefix" {
+  description = "The prefix for the certificate SSM parameter name."
+  type        = string
+  default = "cert-name-prefix"
+}
+
+variable "secret_extensions" {
+  description = "Extensions for secret naming"
+  type = object({
+    certificate = string
+    private_key = string
+  })
+  default = {
+    certificate = "cert"
+    private_key = "key"
+  }
+}
 
 module "self_signed_cert_root" {
   source = "../../modules/acm"
