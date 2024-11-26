@@ -103,7 +103,8 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
   }
 
   ## security
-  server_certificate_arn = var.use_self_signed_cert ? module.certificate.certificate_pem : var.client_server_certificate_arn
+  # server_certificate_arn = var.use_self_signed_cert ? module.certificate.certificate_pem : var.client_server_certificate_arn
+    server_certificate_arn = var.use_self_signed_cert ? module.certificate.acm_certificate_arn : var.client_server_certificate_arn
   transport_protocol     = var.client_server_transport_protocol
   security_group_ids     = concat([aws_security_group.vpn.id], var.security_group_data.additional_security_group_ids)
 
