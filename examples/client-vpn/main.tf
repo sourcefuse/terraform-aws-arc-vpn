@@ -225,7 +225,7 @@ module "vpn" {
   vpc_id      = data.aws_vpc.this.id
 
   client_vpn_config = {
-
+    create             = true
     client_cidr_block = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
     self_signed_cert_data = {
       create             = true
