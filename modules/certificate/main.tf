@@ -50,6 +50,8 @@ resource "aws_acm_certificate" "this" {
   private_key       = tls_private_key.this.private_key_pem
   certificate_body  = var.type == "ca" ? tls_self_signed_cert.ca[0].cert_pem : tls_locally_signed_cert.this[0].cert_pem
   certificate_chain = var.type == "ca" ? null : var.ca_cert_pem
+
+  tags = var.tags
 }
 
 resource "aws_ssm_parameter" "private_key" {
