@@ -8,9 +8,9 @@ output "client_vpn_id" {
   description = "The client vpn ID"
 }
 
-output "client_self_signed_cert_server_certificate_arn" {
-  value       = var.client_vpn_config.create ? module.client_vpn[0].client_self_signed_cert_server_certificate_arn : null
-  description = "Self signed certificate server certificate ARN"
+output "server_certificate" {
+  value       = var.client_vpn_config.create ? module.client_vpn[0].server_certificate_arn : null
+  description = "Server certificate ARN"
 }
 
 output "vpn_gateway_id" {

@@ -25,7 +25,7 @@ module "tags" {
 
   extra_tags = {
     Example  = "True"
-    RepoPath = "github.com/sourcefuse/terraform-aws-refarch-vpn"
+    RepoPath = "github.com/sourcefuse/terraform-aws-arc-vpn"
   }
 }
 
@@ -56,83 +56,41 @@ data "aws_subnets" "private" {
   }
 }
 
-################################################################################
-## certs
-################################################################################
-module "self_signed_cert_ca" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
+## Create CA Certificate
 
-  attributes = ["self", "signed", "cert", "ca"]
-
-  enabled = true
-
-  namespace = var.namespace
-  stage     = var.environment
-  name      = "demo"
-
-  secret_path_format = var.secret_path_format
-
+module "ca" {
+  source = "../../modules/certificate"
+  name   = "poc-dev-client-vpn-ca"
+  type   = "ca"
   subject = {
-    common_name  = "${var.namespace}-${var.environment}"
-    organization = var.namespace
+    common_name  = "ca.test.vpn"
+    organization = "vpn-test"
   }
+  environment = "dev"
+  namespace   = "arc"
 
-  basic_constraints = {
-    ca = true
-  }
-
-  allowed_uses = [
-    "crl_signing",
-    "cert_signing",
-  ]
-
-  certificate_backends = ["SSM"]
+  import_to_acm    = true
+  store_in_ssm     = true
+  store_it_locally = false
 }
 
-data "aws_ssm_parameter" "ca_key" {
-  name = module.self_signed_cert_ca.certificate_key_path
-
-  depends_on = [
-    module.self_signed_cert_ca
-  ]
-}
-
-module "self_signed_cert_root" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
-
-  enabled = true
-
-  attributes = ["self", "signed", "cert", "root"]
-
-  namespace = var.namespace
-  stage     = var.environment
-  name      = "demo"
-
-  secret_path_format = var.secret_path_format
-
+## Create Root certificate
+module "root" {
+  source             = "../../modules/certificate"
+  name               = "poc-dev-client-vpn-root"
+  type               = "root"
+  ca_cert_pem        = module.ca.ca_cert_pem
+  ca_private_key_pem = module.ca.private_key_pem
   subject = {
-    common_name  = "${var.namespace}-${var.environment}.arc-vpn-example.client"
-    organization = var.namespace
+    common_name  = "root.test.vpn"
+    organization = "vpn-test"
   }
+  environment = "dev"
+  namespace   = "arc"
 
-  basic_constraints = {
-    ca = false
-  }
-
-  allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "client_auth",
-  ]
-
-  certificate_backends = ["ACM", "SSM"]
-
-  use_locally_signed = true
-
-  certificate_chain = {
-    cert_pem        = module.self_signed_cert_ca.certificate_pem,
-    private_key_pem = join("", data.aws_ssm_parameter.ca_key[*].value)
-  }
+  import_to_acm    = true
+  store_in_ssm     = true
+  store_it_locally = false
 }
 
 
@@ -143,25 +101,24 @@ module "vpn" {
   source = "../../"
   #version = "1.0.0" # pin the correct version
 
-  name        = "poc-dev-client-vpn-example"
-  namespace   = "poc"
+  name        = "poc-dev-client-vpn-example-1"
+  namespace   = "arc"
   environment = "dev"
   vpc_id      = data.aws_vpc.this.id
 
   client_vpn_config = {
-
+    create            = true
     client_cidr_block = cidrsubnet(data.aws_vpc.this.cidr_block, 6, 1)
-    self_signed_cert_data = {
+    server_certificate_data = {
       create             = true
-      secret_path_format = "/%s.%s"
-      server_common_name = "${var.namespace}-${var.environment}.arc-vpn-example.client"
-      organization_name  = var.namespace
-      ca_pem             = module.self_signed_cert_ca.certificate_pem
-      private_ca_key_pem = data.aws_ssm_parameter.ca_key.value
+      common_name        = "${var.namespace}-${var.environment}.server.arc-vpn"
+      organization       = var.namespace
+      ca_cert_pem        = module.ca.ca_cert_pem
+      ca_private_key_pem = module.ca.private_key_pem
     }
     authentication_options = [
       {
-        root_certificate_chain_arn = module.self_signed_cert_root.certificate_arn
+        root_certificate_chain_arn = module.root.certificate_arn
         type                       = "certificate-authentication"
       }
     ]

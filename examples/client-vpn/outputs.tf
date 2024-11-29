@@ -8,7 +8,7 @@ output "client_vpn_id" {
   description = "The client vpn ID"
 }
 
-output "client_self_signed_cert_server_certificate_arn" {
-  value       = module.vpn.client_self_signed_cert_server_certificate_arn
+output "server_certificate" {
+  value       = module.vpn.server_certificate
   description = "Self signed certificate server certificate ARN"
 }

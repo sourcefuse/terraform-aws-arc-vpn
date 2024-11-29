@@ -11,24 +11,34 @@ variable "vpc_id" {
   description = "The ID of the target network VPC"
 }
 
+variable "environment" {
+  type        = string
+  description = "The deployment environment (e.g., dev, staging, prod)."
+}
+
+variable "namespace" {
+  type        = string
+  description = "The namespace to group resources (e.g., project name or application name)."
+}
+
 variable "name" {
   type        = string
   description = "The name of the client vpn"
 }
 
-variable "self_signed_cert_data" {
+variable "server_certificate_data" {
   type = object({
-    create             = optional(bool, true)
-    secret_path_format = optional(string, "/%s.%s")
-    server_common_name = optional(string, "")
-    organization_name  = optional(string, "")
+    create       = optional(bool, true)
+    common_name  = optional(string, "")
+    organization = optional(string, "")
     allowed_uses = optional(list(string), [
       "key_encipherment",
       "digital_signature",
       "server_auth"
     ])
-    ca_pem             = optional(string, "")
-    private_ca_key_pem = optional(string, "")
+    ca_cert_pem        = optional(string, "")
+    ca_private_key_pem = optional(string, "")
+    certificate_arn    = optional(string, null)
   })
   description = "Data to create certificates"
   default = {
@@ -159,13 +169,7 @@ variable "dns_servers" {
   ]
 }
 
-variable "client_server_certificate_arn" {
-  type        = string
-  description = "The ARN of the ACM server certificate."
-  default     = null
-}
-
-variable "client_server_transport_protocol" {
+variable "transport_protocol" {
   type        = string
   description = "The transport protocol to be used by the VPN session."
   default     = "tcp"

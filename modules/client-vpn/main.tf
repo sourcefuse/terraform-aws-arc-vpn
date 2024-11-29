@@ -45,36 +45,24 @@ resource "aws_security_group" "vpn" {
 }
 
 ################################################################################
-## certs
+## Create Server Certificate
 ################################################################################
-module "self_signed_cert" {
-  source = "git::https://github.com/cloudposse/terraform-aws-ssm-tls-self-signed-cert.git?ref=1.3.0"
-  count  = var.self_signed_cert_data.create == true ? 1 : 0
-
-  attributes         = ["self", "signed", "cert", "server"]
-  secret_path_format = var.self_signed_cert_data.secret_path_format
-
-  name = var.name
-
-
+module "server_certificate" {
+  source             = "../certificate"
+  name               = var.name
+  type               = "server"
+  ca_cert_pem        = var.server_certificate_data.ca_cert_pem
+  ca_private_key_pem = var.server_certificate_data.ca_private_key_pem
   subject = {
-    common_name  = var.self_signed_cert_data.server_common_name
-    organization = var.self_signed_cert_data.organization_name
+    common_name  = var.server_certificate_data.common_name
+    organization = var.server_certificate_data.organization
   }
-  basic_constraints = {
-    ca = false
-  }
+  environment = var.environment
+  namespace   = var.namespace
 
-  allowed_uses = var.self_signed_cert_data.allowed_uses
-
-  certificate_backends = ["ACM", "SSM"]
-
-  use_locally_signed = true
-
-  certificate_chain = {
-    cert_pem        = var.self_signed_cert_data.ca_pem
-    private_key_pem = var.self_signed_cert_data.private_ca_key_pem
-  }
+  import_to_acm    = true
+  store_in_ssm     = true
+  store_it_locally = false
 
   tags = var.tags
 }
@@ -119,12 +107,12 @@ resource "aws_ec2_client_vpn_endpoint" "this" {
   }
 
   ## security
-  server_certificate_arn = length(module.self_signed_cert) > 0 ? one(module.self_signed_cert[*].certificate_arn) : var.client_server_certificate_arn
-  transport_protocol     = var.client_server_transport_protocol
+  server_certificate_arn = var.server_certificate_data.create ? module.server_certificate.certificate_arn : var.server_certificate_data.certificate_arn
+  transport_protocol     = var.transport_protocol
   security_group_ids     = concat([aws_security_group.vpn.id], var.security_group_data.additional_security_group_ids)
 
   depends_on = [
-    module.self_signed_cert
+    module.server_certificate
   ]
 
   tags = merge(var.tags, tomap({
