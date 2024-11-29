@@ -31,18 +31,18 @@ variable "client_vpn_config" {
   type = object({
     create = optional(bool, false)
     # certs
-    self_signed_cert_data = optional(object({
-      create             = optional(bool, true)
-      secret_path_format = optional(string, "/%s.%s")
-      server_common_name = optional(string, "")
-      organization_name  = optional(string, "")
+    server_certificate_data = optional(object({
+      create       = optional(bool, true)
+      common_name  = string
+      organization = string
       allowed_uses = optional(list(string), [
         "key_encipherment",
         "digital_signature",
         "server_auth"
       ])
-      ca_pem             = optional(string, "")
-      private_ca_key_pem = optional(string, "")
+      ca_cert_pem        = string
+      ca_private_key_pem = string
+      certificate_arn    = optional(string, null)
     }))
 
 
@@ -73,9 +73,7 @@ variable "client_vpn_config" {
       type                           = string
     }))
 
-    # server and transport protocol
-    client_server_certificate_arn    = optional(string, null)
-    client_server_transport_protocol = optional(string, "tcp")
+    transport_protocol = optional(string, "tcp")
 
     # security and network associations
     security_group_data = optional(object({

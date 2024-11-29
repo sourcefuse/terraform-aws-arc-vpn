@@ -29,20 +29,6 @@ variable "private_subnet_names_override" {
 }
 
 ################################################################################
-## certs
-################################################################################
-variable "secret_path_format" {
-  description = "The path format to use when writing secrets to the certificate backend."
-  type        = string
-  default     = "/%s.%s"
-
-  validation {
-    condition     = can(substr(var.secret_path_format, 0, 1) == "/")
-    error_message = "The secret path format must contain a leading slash."
-  }
-}
-
-################################################################################
 ## vpn
 ################################################################################
 variable "environment" {
