@@ -111,7 +111,7 @@ variable "vpn_connection_config" {
     - `routes`: Optional static routes to add to the VPN connection.
     - `tags`: Key-value pairs to tag the VPN connection.
   EOT
-  sensitive   = true
+  
 }
 
 
