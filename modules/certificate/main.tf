@@ -55,23 +55,27 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_ssm_parameter" "private_key" {
-  count = var.store_in_ssm ? 1 : 0
-
+  count       = var.store_in_ssm ? 1 : 0
   name        = "/${var.namespace}/${var.environment}/${var.name}/${var.subject.common_name}/${var.type}/private-key"
   description = "Private key for the certificate"
   type        = "SecureString"
   value       = tls_private_key.this.private_key_pem
   tags        = var.tags
+  lifecycle {
+    prevent_destroy = false
+  }
 }
 
 resource "aws_ssm_parameter" "cert" {
-  count = var.store_in_ssm ? 1 : 0
-
+  count       = var.store_in_ssm ? 1 : 0
   name        = "/${var.namespace}/${var.environment}/${var.name}/${var.subject.common_name}/${var.type}/cert"
   description = "Certificate body for the certificate"
   type        = "SecureString"
   value       = var.type == "ca" ? tls_self_signed_cert.ca[0].cert_pem : tls_locally_signed_cert.this[0].cert_pem
   tags        = var.tags
+  lifecycle {
+    prevent_destroy = false
+  }
 }
 
 resource "local_file" "private_key" {
