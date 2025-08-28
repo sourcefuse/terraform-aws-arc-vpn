@@ -185,3 +185,12 @@ variable "client_cidr_block" {
   type        = string
   description = "Client CICR block"
 }
+
+variable "additional_routes" {
+  type = map(object({
+    destination_cidr_block = string
+    target_vpc_subnet_id   = string
+  }))
+  default = {}
+}
+
