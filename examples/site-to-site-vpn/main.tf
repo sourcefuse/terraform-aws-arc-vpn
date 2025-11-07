@@ -7,7 +7,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.0"
+      version = ">= 5.0, < 7.0"
     }
   }
 }
@@ -36,8 +36,21 @@ data "aws_vpc" "this" {
   filter {
     name = "tag:Name"
     values = [
-      "aws-vpc-test-iac"
+      "arc-poc-vpc"
     ]
+  }
+}
+
+# Fetch all route tables in the VPC
+data "aws_route_tables" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+
+  filter {
+    name   = "tag:Type"
+    values = ["private"]
   }
 }
 
@@ -48,7 +61,7 @@ module "vpn" {
   source = "../../"
   #version = "1.0.0" # pin the correct version
 
-  name        = "${var.namespace}-${var.environment}-vpn-example"
+  name        = "${var.namespace}-${var.environment}-site-to-site-vpn-example"
   namespace   = var.namespace
   environment = var.environment
   vpc_id      = data.aws_vpc.this.id
@@ -63,12 +76,11 @@ module "vpn" {
 
     vpn_gateway = {
       vpc_id          = data.aws_vpc.this.id
-      route_table_ids = ["rtb-0bacb41a2947c7b8c", "rtb-0362a413a6bdaca0e"]
+      route_table_ids = data.aws_route_tables.private.ids
     }
 
     vpn_connection = {
-      static_routes_only = true
-
+      static_routes_only       = true
       local_ipv4_network_cidr  = "10.3.0.0/16"
       remote_ipv4_network_cidr = "10.0.0.0/16"
 
@@ -77,12 +89,14 @@ module "vpn" {
           inside_cidr           = null
           log_enabled           = true
           log_retention_in_days = 7
+          ike_versions          = ["ikev2"]
         }
 
         tunnel2 = {
           inside_cidr           = null # CIDR block of the second tunnel
           log_enabled           = true
           log_retention_in_days = 7
+          ike_versions          = ["ikev2"]
         }
       }
 

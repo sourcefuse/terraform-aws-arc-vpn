@@ -156,44 +156,71 @@ variable "site_to_site_vpn_config" {
     })
 
     vpn_connection = object({
-      transit_gateway_id  = optional(string, null) # The ID of the transit gateway
-      static_routes_only  = optional(bool, false)  # If true, only static routes are used
-      enable_acceleration = optional(bool, null)   # (Optional, Default false) Indicate whether to enable acceleration for the VPN connection. Supports only EC2 Transit Gateway.
-
+      transit_gateway_id                      = optional(string, null)         # The ID of the transit gateway
+      vpn_gateway_id                          = optional(string, null)         # The ID of the Virtual Private Gateway
+      static_routes_only                      = optional(bool, false)          # If true, only static routes are used
+      enable_acceleration                     = optional(bool, null)           # (Optional, Default false) Indicate whether to enable acceleration for the VPN connection. Supports only EC2 Transit Gateway.
       local_ipv4_network_cidr                 = optional(string, "0.0.0.0/0")  # The IPv4 CIDR on the customer gateway side
-      local_ipv6_network_cidr                 = optional(string, null)         # The IPv6 CIDR on the customer gateway side "::/0"
+      local_ipv6_network_cidr                 = optional(string, null)         # The IPv6 CIDR on the customer gateway side
       outside_ip_address_type                 = optional(string, "PublicIpv4") # Public or Private S2S VPN
       remote_ipv4_network_cidr                = optional(string, "0.0.0.0/0")  # The IPv4 CIDR on the AWS side
-      remote_ipv6_network_cidr                = optional(string, null)         # The IPv6 CIDR on the AWS side "::/0"
+      remote_ipv6_network_cidr                = optional(string, null)         # The IPv6 CIDR on the AWS side
       transport_transit_gateway_attachment_id = optional(string, null)         # Transit Gateway attachment ID (required for PrivateIpv4)
+      tunnel_inside_ip_version                = optional(string, "ipv4")       # IPv4 or IPv6 traffic processing
 
       tunnel_config = object({
         tunnel1 = object({
-          inside_cidr                  = string                                       # CIDR block of the first tunnel
-          preshared_key                = optional(string, null)                       # Pre-shared key for the first tunnel
-          phase1_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 1 encryption algorithms for tunnel 1
-          phase2_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 2 encryption algorithms for tunnel 1
-          phase1_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 1 integrity algorithms for tunnel 1
-          phase2_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 2 integrity algorithms for tunnel 1
-          log_group_arn                = optional(string, null)
-          log_group_kms_arn            = optional(string, null) # null - log disabled
-          log_enabled                  = optional(bool, false)
-          log_output_format            = optional(string, "json")
-          log_retention_in_days        = optional(number, 7)
+          inside_cidr                     = optional(string, null)                                                     # CIDR block of the first tunnel
+          inside_ipv6_cidr                = optional(string, null)                                                     # IPv6 CIDR block of the first tunnel
+          preshared_key                   = optional(string, null)                                                     # Pre-shared key for the first tunnel
+          dpd_timeout_action              = optional(string, "clear")                                                  # DPD timeout action: clear, none, restart
+          dpd_timeout_seconds             = optional(number, 30)                                                       # DPD timeout in seconds (>=30)
+          enable_tunnel_lifecycle_control = optional(bool, false)                                                      # Turn on/off tunnel endpoint lifecycle control
+          ike_versions                    = optional(list(string), ["ikev1", "ikev2"])                                 # IKE versions: ikev1, ikev2
+          phase1_dh_group_numbers         = optional(list(number), [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])    # Phase 1 DH group numbers
+          phase1_encryption_algorithms    = optional(list(string), ["AES128", "AES256"])                               # Phase 1 encryption algorithms
+          phase1_integrity_algorithms     = optional(list(string), ["SHA1", "SHA2-256"])                               # Phase 1 integrity algorithms
+          phase1_lifetime_seconds         = optional(number, 28800)                                                    # Phase 1 lifetime (900-28800)
+          phase2_dh_group_numbers         = optional(list(number), [2, 5, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]) # Phase 2 DH group numbers
+          phase2_encryption_algorithms    = optional(list(string), ["AES128", "AES256"])                               # Phase 2 encryption algorithms
+          phase2_integrity_algorithms     = optional(list(string), ["SHA1", "SHA2-256"])                               # Phase 2 integrity algorithms
+          phase2_lifetime_seconds         = optional(number, 3600)                                                     # Phase 2 lifetime (900-3600)
+          rekey_fuzz_percentage           = optional(number, 100)                                                      # Rekey fuzz percentage (0-100)
+          rekey_margin_time_seconds       = optional(number, 540)                                                      # Rekey margin time (60 to half of phase2_lifetime)
+          replay_window_size              = optional(number, 1024)                                                     # Replay window size (64-2048)
+          startup_action                  = optional(string, "add")                                                    # Startup action: add, start
+          log_enabled                     = optional(bool, false)                                                      # Enable VPN tunnel logging
+          log_group_arn                   = optional(string, null)                                                     # CloudWatch log group ARN
+          log_group_kms_arn               = optional(string, null)                                                     # KMS key for log encryption
+          log_output_format               = optional(string, "json")                                                   # Log format: json, text
+          log_retention_in_days           = optional(number, 7)                                                        # Log retention period
         })
 
         tunnel2 = object({
-          inside_cidr                  = string                                       # CIDR block of the second tunnel
-          preshared_key                = optional(string, null)                       # Pre-shared key for the second tunnel
-          phase1_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 1 encryption algorithms for tunnel 2
-          phase2_encryption_algorithms = optional(list(string), ["AES128", "AES256"]) # Phase 2 encryption algorithms for tunnel 2
-          phase1_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 1 integrity algorithms for tunnel 2
-          phase2_integrity_algorithms  = optional(list(string), ["SHA1", "SHA2-256"]) # Phase 2 integrity algorithms for tunnel 2
-          log_enabled                  = optional(bool, false)
-          log_group_arn                = optional(string, null)
-          log_group_kms_arn            = optional(string, null)
-          log_output_format            = optional(string, "json")
-          log_retention_in_days        = optional(number, 7)
+          inside_cidr                     = optional(string, null)                                                     # CIDR block of the second tunnel
+          inside_ipv6_cidr                = optional(string, null)                                                     # IPv6 CIDR block of the second tunnel
+          preshared_key                   = optional(string, null)                                                     # Pre-shared key for the second tunnel
+          dpd_timeout_action              = optional(string, "clear")                                                  # DPD timeout action: clear, none, restart
+          dpd_timeout_seconds             = optional(number, 30)                                                       # DPD timeout in seconds (>=30)
+          enable_tunnel_lifecycle_control = optional(bool, false)                                                      # Turn on/off tunnel endpoint lifecycle control
+          ike_versions                    = optional(list(string), ["ikev1", "ikev2"])                                 # IKE versions: ikev1, ikev2
+          phase1_dh_group_numbers         = optional(list(number), [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])    # Phase 1 DH group numbers
+          phase1_encryption_algorithms    = optional(list(string), ["AES128", "AES256"])                               # Phase 1 encryption algorithms
+          phase1_integrity_algorithms     = optional(list(string), ["SHA1", "SHA2-256"])                               # Phase 1 integrity algorithms
+          phase1_lifetime_seconds         = optional(number, 28800)                                                    # Phase 1 lifetime (900-28800)
+          phase2_dh_group_numbers         = optional(list(number), [2, 5, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]) # Phase 2 DH group numbers
+          phase2_encryption_algorithms    = optional(list(string), ["AES128", "AES256"])                               # Phase 2 encryption algorithms
+          phase2_integrity_algorithms     = optional(list(string), ["SHA1", "SHA2-256"])                               # Phase 2 integrity algorithms
+          phase2_lifetime_seconds         = optional(number, 3600)                                                     # Phase 2 lifetime (900-3600)
+          rekey_fuzz_percentage           = optional(number, 100)                                                      # Rekey fuzz percentage (0-100)
+          rekey_margin_time_seconds       = optional(number, 540)                                                      # Rekey margin time (60 to half of phase2_lifetime)
+          replay_window_size              = optional(number, 1024)                                                     # Replay window size (64-2048)
+          startup_action                  = optional(string, "add")                                                    # Startup action: add, start
+          log_enabled                     = optional(bool, false)                                                      # Enable VPN tunnel logging
+          log_group_arn                   = optional(string, null)                                                     # CloudWatch log group ARN
+          log_group_kms_arn               = optional(string, null)                                                     # KMS key for log encryption
+          log_output_format               = optional(string, "json")                                                   # Log format: json, text
+          log_retention_in_days           = optional(number, 7)                                                        # Log retention period
         })
       })
       # VPN routes configuration (only for static routes)
