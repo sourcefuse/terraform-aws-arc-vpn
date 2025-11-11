@@ -136,3 +136,11 @@ resource "aws_ec2_client_vpn_authorization_rule" "this" {
   access_group_id        = each.value.access_group_id
   authorize_all_groups   = each.value.authorize_all_groups
 }
+
+resource "aws_ec2_client_vpn_route" "this" {
+  for_each = var.additional_routes
+
+  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
+  destination_cidr_block = each.value.destination_cidr_block
+  target_vpc_subnet_id   = each.value.target_vpc_subnet_id
+}
