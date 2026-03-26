@@ -120,6 +120,11 @@ variable "client_vpn_config" {
 
     subnet_ids = list(string)
 
+    # additional client vpn routes
+    routes = optional(list(object({
+      destination_cidr_block = string
+    })), [])
+
     # authorization options
     authorization_options = map(object({
       target_network_cidr  = string
@@ -132,6 +137,7 @@ variable "client_vpn_config" {
     authentication_options = null
     authorization_options  = null
     client_cidr_block      = null
+    routes                 = []
     subnet_ids             = []
   }
 }
