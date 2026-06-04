@@ -21,6 +21,10 @@
 
 Creates AWS Client VPN or Site-to-Site VPN endpoints with certificate or Active Directory authentication and split-tunnel support.
 
+## Architecture
+
+![Architecture Diagram](./static/arch.png)
+
 ## What It Does
 
 - Client VPN endpoint with certificate or AD authentication
