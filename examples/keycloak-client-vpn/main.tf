@@ -190,18 +190,127 @@ module "vpn" {
 }
 
 ################################################################################
-## Keycloak SAML client for AWS Client VPN
+## Keycloak SAML client for AWS Client VPN (inlined)
 ################################################################################
-module "keycloak_vpn_client" {
-  source = "../../modules/keycloak-vpn-client"
 
-  keycloak_url       = var.keycloak_config.url
-  keycloak_client_id = var.keycloak_config.client_id
-  keycloak_username  = var.keycloak_config.username
-  keycloak_password  = var.keycloak_config.password
-  keycloak_realm     = var.keycloak_config.realm
-  vpn_users          = var.keycloak_config.vpn_users
-  tags               = module.tags.tags
+## AWS Client VPN SAML flow takes longer than Keycloak's default 60s window.
+## Set via API to avoid 409 conflict when the realm already exists.
+resource "null_resource" "realm_lifespan" {
+  triggers = {
+    realm = var.keycloak_config.realm
+    url   = var.keycloak_config.url
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      TOKEN=$(curl -s -X POST "${var.keycloak_config.url}/realms/master/protocol/openid-connect/token" \
+        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${var.keycloak_config.password}&grant_type=password" \
+        | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+      curl -s -o /dev/null -X PUT \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        "${var.keycloak_config.url}/admin/realms/${var.keycloak_config.realm}" \
+        -d '{"accessCodeLifespan":300,"accessCodeLifespanLogin":300,"accessCodeLifespanUserAction":300}'
+    EOT
+  }
 
   depends_on = [keycloak_realm.this]
+}
+
+resource "keycloak_saml_client" "this" {
+  realm_id  = var.keycloak_config.realm
+  client_id = "urn:amazon:webservices:clientvpn"
+  name      = "AWS Client VPN"
+  enabled   = true
+
+  sign_documents            = true
+  sign_assertions           = true
+  include_authn_statement   = true
+  client_signature_required = false
+  force_post_binding        = true
+  name_id_format            = "email"
+  force_name_id_format      = true
+
+  valid_redirect_uris = [
+    "http://127.0.0.1:35001",
+    "https://self-service.clientvpn.amazonaws.com/api/auth/sso/saml",
+  ]
+
+  depends_on = [keycloak_realm.this]
+}
+
+## Remove role_list default scope via API.
+resource "null_resource" "remove_role_list_scope" {
+  triggers = {
+    client_id = keycloak_saml_client.this.id
+    realm     = var.keycloak_config.realm
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      TOKEN=$(curl -s -X POST "${var.keycloak_config.url}/realms/master/protocol/openid-connect/token" \
+        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${var.keycloak_config.password}&grant_type=password" \
+        | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+      SCOPE_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
+        "${var.keycloak_config.url}/admin/realms/${var.keycloak_config.realm}/client-scopes" \
+        | python3 -c "import sys,json; s=[x for x in json.load(sys.stdin) if x['name']=='role_list']; print(s[0]['id'] if s else '')")
+      if [ -n "$SCOPE_ID" ]; then
+        curl -s -o /dev/null -X DELETE \
+          -H "Authorization: Bearer $TOKEN" \
+          "${var.keycloak_config.url}/admin/realms/${var.keycloak_config.realm}/clients/${self.triggers.client_id}/default-client-scopes/$SCOPE_ID"
+      fi
+    EOT
+  }
+
+  depends_on = [keycloak_saml_client.this]
+}
+
+resource "keycloak_generic_protocol_mapper" "email_attr" {
+  realm_id        = var.keycloak_config.realm
+  client_id       = keycloak_saml_client.this.id
+  name            = "email-attr"
+  protocol        = "saml"
+  protocol_mapper = "saml-user-attribute-mapper"
+  config = {
+    "user.attribute"       = "email"
+    "attribute.name"       = "email"
+    "attribute.nameformat" = "Basic"
+    "friendly.name"        = "email"
+  }
+}
+
+resource "random_password" "vpn_user" {
+  for_each         = var.keycloak_config.vpn_users
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+?"
+  min_upper        = 1
+  min_lower        = 1
+  min_numeric      = 1
+  min_special      = 1
+}
+
+resource "keycloak_user" "vpn_user" {
+  for_each       = var.keycloak_config.vpn_users
+  realm_id       = var.keycloak_config.realm
+  username       = each.value.email
+  email          = each.value.email
+  first_name     = each.value.first_name
+  last_name      = each.value.last_name
+  email_verified = true
+  enabled        = true
+
+  initial_password {
+    value     = random_password.vpn_user[each.key].result
+    temporary = true
+  }
+}
+
+resource "aws_ssm_parameter" "vpn_user_password" {
+  for_each    = var.keycloak_config.vpn_users
+  name        = "/arc-vpn/${var.keycloak_config.realm}/users/${replace(each.value.email, "@", "_at_")}/password"
+  description = "Initial VPN password for ${each.value.email}"
+  type        = "SecureString"
+  value       = random_password.vpn_user[each.key].result
+  tags        = module.tags.tags
 }

@@ -4,5 +4,4 @@ terraform.tfstate
 *.backup
 .idea
 .external_momdules
-*.xml
 .DS_Store
