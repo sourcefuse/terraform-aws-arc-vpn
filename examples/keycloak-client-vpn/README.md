@@ -139,3 +139,67 @@ aws ssm get-parameter \
 | `409 Conflict` on realm | Realm already exists | `terraform import 'keycloak_realm.aws_sso_settings' '<realm>'` |
 | `409 Conflict` on user | User already exists in Keycloak | `terraform import 'keycloak_user.vpn_user["key"]' '<realm>/<uuid>'` |
 | Subnet CIDR overlap | `client_cidr_block` overlaps a subnet | Set `client_cidr_block` to a non-overlapping range |
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3, < 2.0.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 7.0 |
+| <a name="requirement_http"></a> [http](#requirement\_http) | >= 3.0 |
+| <a name="requirement_keycloak"></a> [keycloak](#requirement\_keycloak) | >= 4.5 |
+| <a name="requirement_null"></a> [null](#requirement\_null) | >= 3.0 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.100.0 |
+| <a name="provider_http"></a> [http](#provider\_http) | 3.6.0 |
+| <a name="provider_keycloak"></a> [keycloak](#provider\_keycloak) | 5.7.0 |
+
+## Modules
+
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_ca"></a> [ca](#module\_ca) | ../../modules/certificate | n/a |
+| <a name="module_keycloak_vpn_client"></a> [keycloak\_vpn\_client](#module\_keycloak\_vpn\_client) | ../../modules/keycloak-vpn-client | n/a |
+| <a name="module_tags"></a> [tags](#module\_tags) | sourcefuse/arc-tags/aws | 1.2.3 |
+| <a name="module_vpn"></a> [vpn](#module\_vpn) | ../../ | n/a |
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [keycloak_realm.this](https://registry.terraform.io/providers/keycloak/keycloak/latest/docs/resources/realm) | resource |
+| [aws_subnets.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnets) | data source |
+| [aws_vpc.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
+| [http_http.keycloak_metadata](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) | data source |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_client_cidr_block"></a> [client\_cidr\_block](#input\_client\_cidr\_block) | Client CIDR block. Must not overlap with any VPC subnet. | `string` | `null` | no |
+| <a name="input_create_keycloak_realm"></a> [create\_keycloak\_realm](#input\_create\_keycloak\_realm) | Set to false if the realm already exists in Keycloak. | `bool` | `true` | no |
+| <a name="input_environment"></a> [environment](#input\_environment) | Environment name | `string` | `"poc"` | no |
+| <a name="input_iam_saml_provider_name"></a> [iam\_saml\_provider\_name](#input\_iam\_saml\_provider\_name) | Name of the IAM SAML provider. | `string` | `"keycloak-client-vpn"` | no |
+| <a name="input_keycloak_config"></a> [keycloak\_config](#input\_keycloak\_config) | Keycloak connection and VPN user configuration. | <pre>object({<br/>    create    = optional(bool, true)<br/>    url       = string<br/>    realm     = string<br/>    client_id = optional(string, "admin-cli")<br/>    username  = string<br/>    password  = string<br/>    vpn_users = optional(map(object({<br/>      email      = string<br/>      first_name = string<br/>      last_name  = string<br/>    })), {})<br/>  })</pre> | n/a | yes |
+| <a name="input_namespace"></a> [namespace](#input\_namespace) | Namespace to assign the resources | `string` | `"arc"` | no |
+| <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Project name used for tagging | `string` | `"arc-example"` | no |
+| <a name="input_region"></a> [region](#input\_region) | AWS region | `string` | `"us-east-1"` | no |
+| <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | Subnet ID override. If set, skips tag-based subnet lookup. | `list(string)` | `[]` | no |
+| <a name="input_subnet_names"></a> [subnet\_names](#input\_subnet\_names) | Subnet Name tag override. | `list(string)` | `[]` | no |
+| <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | VPC ID override. If set, skips tag-based VPC lookup. | `string` | `null` | no |
+| <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | VPC Name tag override. | `string` | `null` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_client_vpn_arn"></a> [client\_vpn\_arn](#output\_client\_vpn\_arn) | The Keycloak-integrated Client VPN ARN |
+| <a name="output_client_vpn_id"></a> [client\_vpn\_id](#output\_client\_vpn\_id) | The Keycloak-integrated Client VPN ID |
+| <a name="output_server_certificate"></a> [server\_certificate](#output\_server\_certificate) | Server certificate ARN (ACM) |
+<!-- END_TF_DOCS -->
