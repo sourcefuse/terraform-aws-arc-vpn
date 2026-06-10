@@ -11,6 +11,8 @@ resource "tls_cert_request" "this" {
     common_name  = var.subject.common_name
     organization = var.subject.organization
   }
+
+  dns_names = length(var.dns_names) > 0 ? var.dns_names : [var.subject.common_name]
 }
 
 resource "tls_self_signed_cert" "ca" {

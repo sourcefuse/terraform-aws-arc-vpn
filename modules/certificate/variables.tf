@@ -91,3 +91,9 @@ variable "ca_private_key_pem" {
   description = "(optional) Private Key of CA"
   default     = null
 }
+
+variable "dns_names" {
+  type        = list(string)
+  description = "DNS SANs for the certificate. Should include the common_name. Required for modern TLS clients."
+  default     = []
+}
