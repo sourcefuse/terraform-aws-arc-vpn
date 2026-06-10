@@ -181,6 +181,14 @@ variable "subnet_ids" {
   description = "The ID of the subnets to associate with the Client VPN endpoint."
 }
 
+variable "routes" {
+  type = list(object({
+    destination_cidr_block = string
+  }))
+  description = "Additional Client VPN routes to create for each associated subnet."
+  default     = []
+}
+
 variable "client_cidr_block" {
   type        = string
   description = "Client CICR block"
