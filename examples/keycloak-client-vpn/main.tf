@@ -29,8 +29,7 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.region
-  profile = "arun"
+  region = var.region
 }
 
 provider "keycloak" {
@@ -65,13 +64,32 @@ resource "keycloak_realm" "this" {
 }
 
 ################################################################################
-## Keycloak IdP metadata — fetched live so the IAM SAML provider always has
-## the current signing certificate, even after realm recreation.
+## Keycloak IdP metadata — fetched live, patched, and stored in SSM.
+## The VPN module reads from SSM so the metadata is versioned and auditable.
 ################################################################################
 data "http" "keycloak_metadata" {
   url = "${var.keycloak_config.url}/realms/${var.keycloak_config.realm}/protocol/saml/descriptor"
 
   depends_on = [keycloak_realm.this]
+}
+
+resource "aws_ssm_parameter" "keycloak_metadata" {
+  name        = "/${var.namespace}/${var.environment}/keycloak/saml-metadata"
+  description = "Keycloak SAML IdP metadata for AWS Client VPN"
+  type        = "String"
+  overwrite   = true
+  ## AWS requires WantAuthnRequestsSigned="false"; Keycloak 26 hardcodes "true".
+  value = replace(
+    data.http.keycloak_metadata.response_body,
+    "WantAuthnRequestsSigned=\"true\"",
+    "WantAuthnRequestsSigned=\"false\""
+  )
+  tags = module.tags.tags
+}
+
+data "aws_ssm_parameter" "keycloak_metadata" {
+  name       = aws_ssm_parameter.keycloak_metadata.name
+  depends_on = [aws_ssm_parameter.keycloak_metadata]
 }
 
 ################################################################################
@@ -161,15 +179,9 @@ module "vpn" {
 
     authentication_options = [{ type = "federated-authentication" }]
 
-    iam_saml_provider_enabled = true
-    iam_saml_provider_name    = var.iam_saml_provider_name
-    ## AWS requires WantAuthnRequestsSigned="false" in the IdP metadata.
-    ## Keycloak 26 hardcodes it to "true", so we patch it here.
-    saml_metadata_document_content = replace(
-      data.http.keycloak_metadata.response_body,
-      "WantAuthnRequestsSigned=\"true\"",
-      "WantAuthnRequestsSigned=\"false\""
-    )
+    iam_saml_provider_enabled      = true
+    iam_saml_provider_name         = var.iam_saml_provider_name
+    saml_metadata_document_content = data.aws_ssm_parameter.keycloak_metadata.value
 
     authorization_options = {
       "allow-vpc" = {
@@ -304,6 +316,8 @@ resource "keycloak_user" "vpn_user" {
     value     = random_password.vpn_user[each.key].result
     temporary = true
   }
+
+  depends_on = [keycloak_realm.this]
 }
 
 resource "aws_ssm_parameter" "vpn_user_password" {

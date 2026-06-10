@@ -27,3 +27,8 @@ output "vpn_user_ssm_paths" {
   value       = { for k, v in var.keycloak_config.vpn_users : k => aws_ssm_parameter.vpn_user_password[k].name }
   description = "Map of user key to SSM parameter path containing the initial password"
 }
+
+output "keycloak_metadata_ssm_path" {
+  value       = aws_ssm_parameter.keycloak_metadata.name
+  description = "SSM parameter path storing the patched Keycloak SAML metadata XML"
+}

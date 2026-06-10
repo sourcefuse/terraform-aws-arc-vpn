@@ -174,6 +174,7 @@ aws ssm get-parameter \
 
 | Name | Type |
 |------|------|
+| [aws_ssm_parameter.keycloak_metadata](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
 | [aws_ssm_parameter.vpn_user_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
 | [keycloak_generic_protocol_mapper.email_attr](https://registry.terraform.io/providers/keycloak/keycloak/latest/docs/resources/generic_protocol_mapper) | resource |
 | [keycloak_realm.this](https://registry.terraform.io/providers/keycloak/keycloak/latest/docs/resources/realm) | resource |
@@ -182,6 +183,7 @@ aws ssm get-parameter \
 | [null_resource.realm_lifespan](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.remove_role_list_scope](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_password.vpn_user](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [aws_ssm_parameter.keycloak_metadata](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ssm_parameter) | data source |
 | [aws_subnets.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnets) | data source |
 | [aws_vpc.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
 | [http_http.keycloak_metadata](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) | data source |
@@ -209,6 +211,7 @@ aws ssm get-parameter \
 |------|-------------|
 | <a name="output_client_vpn_arn"></a> [client\_vpn\_arn](#output\_client\_vpn\_arn) | The Keycloak-integrated Client VPN ARN |
 | <a name="output_client_vpn_id"></a> [client\_vpn\_id](#output\_client\_vpn\_id) | The Keycloak-integrated Client VPN ID |
+| <a name="output_keycloak_metadata_ssm_path"></a> [keycloak\_metadata\_ssm\_path](#output\_keycloak\_metadata\_ssm\_path) | SSM parameter path storing the patched Keycloak SAML metadata XML |
 | <a name="output_saml_client_client_id"></a> [saml\_client\_client\_id](#output\_saml\_client\_client\_id) | SAML client\_id (urn:amazon:webservices:clientvpn) |
 | <a name="output_saml_client_id"></a> [saml\_client\_id](#output\_saml\_client\_id) | Keycloak internal UUID of the VPN SAML client |
 | <a name="output_server_certificate"></a> [server\_certificate](#output\_server\_certificate) | Server certificate ARN (ACM) |
