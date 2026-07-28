@@ -32,11 +32,27 @@ provider "aws" {
   region = var.region
 }
 
+################################################################################
+## Keycloak admin password — fetched from SSM if ssm_password_path is set
+################################################################################
+data "aws_ssm_parameter" "keycloak_password" {
+  count           = var.keycloak_config.ssm_password_path != null ? 1 : 0
+  name            = var.keycloak_config.ssm_password_path
+  with_decryption = true
+}
+
+locals {
+  keycloak_password = coalesce(
+    try(data.aws_ssm_parameter.keycloak_password[0].value, null),
+    var.keycloak_config.password
+  )
+}
+
 provider "keycloak" {
   url       = var.keycloak_config.url
   client_id = var.keycloak_config.client_id
   username  = var.keycloak_config.username
-  password  = var.keycloak_config.password
+  password  = local.keycloak_password
   base_path = ""
 }
 
@@ -216,7 +232,7 @@ resource "null_resource" "realm_lifespan" {
   provisioner "local-exec" {
     command = <<-EOT
       TOKEN=$(curl -s -X POST "${var.keycloak_config.url}/realms/master/protocol/openid-connect/token" \
-        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${var.keycloak_config.password}&grant_type=password" \
+        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${local.keycloak_password}&grant_type=password" \
         | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
       curl -s -o /dev/null -X PUT \
         -H "Authorization: Bearer $TOKEN" \
@@ -261,7 +277,7 @@ resource "null_resource" "remove_role_list_scope" {
   provisioner "local-exec" {
     command = <<-EOT
       TOKEN=$(curl -s -X POST "${var.keycloak_config.url}/realms/master/protocol/openid-connect/token" \
-        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${var.keycloak_config.password}&grant_type=password" \
+        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${local.keycloak_password}&grant_type=password" \
         | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
       SCOPE_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
         "${var.keycloak_config.url}/admin/realms/${var.keycloak_config.realm}/client-scopes" \
