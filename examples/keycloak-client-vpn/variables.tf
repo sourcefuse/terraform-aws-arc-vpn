@@ -77,24 +77,17 @@ variable "create_keycloak_realm" {
 }
 
 variable "keycloak_config" {
-  description = "Keycloak connection and VPN user configuration."
+  description = "Keycloak connection and VPN user configuration. Password is fetched from SSM at /arc-poc/keycloak/admin-password"
   type = object({
-    create            = optional(bool, true)
-    url               = string
-    realm             = string
-    client_id         = optional(string, "admin-cli")
-    username          = string
-    password          = optional(string, null)
-    ssm_password_path = optional(string, null)
+    create    = optional(bool, true)
+    url       = string
+    realm     = string
+    client_id = optional(string, "admin-cli")
+    username  = string
     vpn_users = optional(map(object({
       email      = string
       first_name = string
       last_name  = string
     })), {})
   })
-
-  validation {
-    condition     = var.keycloak_config.password != null || var.keycloak_config.ssm_password_path != null
-    error_message = "Either 'password' or 'ssm_password_path' must be provided in keycloak_config."
-  }
 }

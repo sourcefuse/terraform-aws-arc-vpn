@@ -1,36 +1,36 @@
 region       = "us-east-1"
 namespace    = "arc"
 environment  = "poc"
-project_name = "arc-example"
+project_name = "arc-vpn-test"
 
-vpc_id = "vpc-031234567890"
+vpc_id = "vpc-0e6c09980580ecbf6"
 subnet_ids = [
-  "subnet-031234567890",
+  "subnet-066d0c78479b72e77",
+  "subnet-064b80a494fed9835",
 ]
 
 client_cidr_block      = "172.31.128.0/22"
 iam_saml_provider_name = "keycloak-aws-sso-client-vpn"
 
-create_keycloak_realm = true # realm already exists
+create_keycloak_realm = true
 
 keycloak_config = {
   create    = true
-  url       = "https://keycloak.xyzorg.link"
+  url       = "https://keycloak.arc-poc.link"
   realm     = "aws-sso"
   client_id = "admin-cli"
   username  = "admin"
-  password  = "ywtRdWQBw8CA4LA("
 
   vpn_users = {
-    "user1" = {
-      email      = "user1@example.com"
-      first_name = "first"
-      last_name  = "last"
-    }
-    "user2" = {
-      email      = "user2@example.com"
-      first_name = "first"
-      last_name  = "last"
+    "arun" = {
+      email      = "arun.sai@sourcefuse.com"
+      first_name = "Arun"
+      last_name  = "Sai"
+    },
+    "vijay" = {
+      email      = "vijay.stephen@sourcefuse.com"
+      first_name = "vijay"
+      last_name  = "stephen"
     }
   }
 }

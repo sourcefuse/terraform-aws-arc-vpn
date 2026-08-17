@@ -11,7 +11,7 @@ terraform {
     }
     keycloak = {
       source  = "keycloak/keycloak"
-      version = ">= 4.5"
+      version = "< 5.8.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -33,26 +33,18 @@ provider "aws" {
 }
 
 ################################################################################
-## Keycloak admin password — fetched from SSM if ssm_password_path is set
+## Keycloak admin password — fetched from SSM
 ################################################################################
-data "aws_ssm_parameter" "keycloak_password" {
-  count           = var.keycloak_config.ssm_password_path != null ? 1 : 0
-  name            = var.keycloak_config.ssm_password_path
+data "aws_ssm_parameter" "keycloak_admin_password" {
+  name            = "/arc-poc/keycloak/admin-password"
   with_decryption = true
-}
-
-locals {
-  keycloak_password = coalesce(
-    try(data.aws_ssm_parameter.keycloak_password[0].value, null),
-    var.keycloak_config.password
-  )
 }
 
 provider "keycloak" {
   url       = var.keycloak_config.url
   client_id = var.keycloak_config.client_id
   username  = var.keycloak_config.username
-  password  = local.keycloak_password
+  password  = data.aws_ssm_parameter.keycloak_admin_password.value
   base_path = ""
 }
 
@@ -72,11 +64,175 @@ module "tags" {
 ################################################################################
 ## Keycloak realm — created only if create_keycloak_realm = true.
 ## Set create_keycloak_realm = false if the realm already exists.
+## access_code_lifespan* are set to 5m (300s) because the AWS Client VPN
+## SAML flow takes longer than Keycloak's default 60s window.
 ################################################################################
 resource "keycloak_realm" "this" {
-  count   = var.create_keycloak_realm ? 1 : 0
+  count = var.create_keycloak_realm ? 1 : 0
+
+  # Required
   realm   = var.keycloak_config.realm
   enabled = true
+
+  # General
+  display_name                  = "aws realm"
+  display_name_html             = null
+  user_managed_access           = false
+  organizations_enabled         = false
+  attributes                    = {}
+  internal_id                   = null
+  terraform_deletion_protection = false
+
+  # Login Settings
+  registration_allowed           = false
+  registration_email_as_username = false
+  edit_username_allowed          = false
+  reset_password_allowed         = false
+  remember_me                    = false
+  verify_email                   = false
+  login_with_email_allowed       = true
+  duplicate_emails_allowed       = false
+  ssl_required                   = "external" # "none" | "external" | "all"
+
+  # Themes
+  login_theme   = null
+  account_theme = null
+  admin_theme   = null
+  email_theme   = null
+
+  # Password Policy
+  password_policy = null
+  # example: "upperCase(1) and length(8) and forceExpiredPasswordChange(365) and notUsername"
+
+  # Authentication
+  admin_permissions_enabled = false
+
+  # Authentication Flow Bindings
+  browser_flow               = null
+  registration_flow          = null
+  direct_grant_flow          = null
+  reset_credentials_flow     = null
+  client_authentication_flow = null
+  docker_authentication_flow = null
+  first_broker_login_flow    = null
+
+  # Tokens — Go duration strings e.g. "30m", "1h", "12h", "30d"
+  default_signature_algorithm              = null
+  revoke_refresh_token                     = false
+  refresh_token_max_reuse                  = null
+  sso_session_idle_timeout                 = null
+  sso_session_max_lifespan                 = null
+  sso_session_idle_timeout_remember_me     = null
+  sso_session_max_lifespan_remember_me     = null
+  offline_session_idle_timeout             = null
+  offline_session_max_lifespan             = null
+  offline_session_max_lifespan_enabled     = false
+  client_session_idle_timeout              = null
+  client_session_max_lifespan              = null
+  access_token_lifespan                    = null
+  access_token_lifespan_for_implicit_flow  = null
+  action_token_generated_by_user_lifespan  = null
+  action_token_generated_by_admin_lifespan = null
+  oauth2_device_code_lifespan              = null
+  oauth2_device_polling_interval           = null # seconds
+
+  # AWS Client VPN SAML flow needs more than the default 60s
+  access_code_lifespan             = "5m"
+  access_code_lifespan_login       = "5m"
+  access_code_lifespan_user_action = "5m"
+
+  # Default Client Scopes
+  default_default_client_scopes  = []
+  default_optional_client_scopes = []
+
+  # SMTP (commented out — configure if email notifications are needed)
+  # smtp_server {
+  #   host                  = "smtp.example.com"
+  #   port                  = 587
+  #   from                  = "no-reply@example.com"
+  #   from_display_name     = null
+  #   reply_to              = null
+  #   reply_to_display_name = null
+  #   envelope_from         = null
+  #   starttls              = true
+  #   ssl                   = false
+  #   auth {
+  #     username = "smtp-user"
+  #     password = "smtp-password"
+  #   }
+  # }
+
+  # Internationalization (commented out — enable if multi-language support needed)
+  # internationalization {
+  #   supported_locales = ["en"]
+  #   default_locale    = "en"
+  # }
+
+  # Security Defenses
+  security_defenses {
+    headers {
+      x_frame_options                     = "SAMEORIGIN"
+      content_security_policy             = "frame-src 'self'; frame-ancestors 'self'; object-src 'none';"
+      content_security_policy_report_only = ""
+      x_content_type_options              = "nosniff"
+      x_robots_tag                        = "none"
+      x_xss_protection                    = "1; mode=block"
+      strict_transport_security           = "max-age=31536000; includeSubDomains"
+      referrer_policy                     = "no-referrer"
+    }
+    brute_force_detection {
+      permanent_lockout                = false
+      max_temporary_lockouts           = 0
+      max_login_failures               = 30
+      wait_increment_seconds           = 60
+      quick_login_check_milli_seconds  = 1000
+      minimum_quick_login_wait_seconds = 60
+      max_failure_wait_seconds         = 900
+      failure_reset_time_seconds       = 43200
+    }
+  }
+
+  # OTP Policy (commented out — defaults are fine for most use cases)
+  # otp_policy {
+  #   type              = "totp"   # "totp" | "hotp"
+  #   algorithm         = "HmacSHA1"
+  #   digits            = 6
+  #   initial_counter   = 2
+  #   look_ahead_window = 1
+  #   period            = 30
+  #   code_reusable     = false
+  # }
+
+  # WebAuthn Policy (commented out — enable if hardware key / passkey support needed)
+  # web_authn_policy {
+  #   relying_party_entity_name         = "Example"
+  #   relying_party_id                  = "keycloak.example.com"
+  #   signature_algorithms              = ["ES256", "RS256"]
+  #   attestation_conveyance_preference = "not specified"
+  #   authenticator_attachment          = "not specified"
+  #   discoverable_credential           = "not specified"
+  #   user_verification_requirement     = "not specified"
+  #   create_timeout                    = 0
+  #   avoid_same_authenticator_register = false
+  #   acceptable_aaguids                = []
+  #   extra_origins                     = []
+  # }
+
+  # WebAuthn Passwordless Policy (commented out)
+  # web_authn_passwordless_policy {
+  #   relying_party_entity_name         = "Example"
+  #   relying_party_id                  = "keycloak.example.com"
+  #   signature_algorithms              = ["ES256", "RS256"]
+  #   attestation_conveyance_preference = "not specified"
+  #   authenticator_attachment          = "not specified"
+  #   discoverable_credential           = "not specified"
+  #   user_verification_requirement     = "not specified"
+  #   create_timeout                    = 0
+  #   avoid_same_authenticator_register = false
+  #   acceptable_aaguids                = []
+  #   extra_origins                     = []
+  #   passwordless_passkeys_enabled     = false
+  # }
 }
 
 ################################################################################
@@ -149,23 +305,42 @@ data "aws_subnets" "private" {
 }
 
 ################################################################################
-## CA certificate
+## Certificates — CA only (for server certificate)
 ################################################################################
-module "ca" {
-  source = "../../modules/certificate"
+locals {
+  certificates = {
+    ca = {
+      name               = "${var.namespace}-${var.environment}-keycloak-vpn-ca"
+      type               = "ca"
+      common_name        = "ca.${var.namespace}.vpn"
+      ca_cert_pem        = null
+      ca_private_key_pem = null
+      import_to_acm      = true
+      store_in_ssm       = true
+      store_it_locally   = false
+    }
+  }
+}
 
-  name = "${var.namespace}-${var.environment}-keycloak-vpn-ca"
-  type = "ca"
+module "certificates" {
+  for_each = local.certificates
+  source   = "../../modules/certificate"
+
+  name = each.value.name
+  type = each.value.type
   subject = {
-    common_name  = "ca.${var.namespace}.vpn"
+    common_name  = each.value.common_name
     organization = var.namespace
   }
   environment = var.environment
   namespace   = var.namespace
 
-  import_to_acm    = true
-  store_in_ssm     = true
-  store_it_locally = false
+  ca_cert_pem        = null
+  ca_private_key_pem = null
+
+  import_to_acm    = each.value.import_to_acm
+  store_in_ssm     = each.value.store_in_ssm
+  store_it_locally = each.value.store_it_locally
 
   tags = module.tags.tags
 }
@@ -189,11 +364,20 @@ module "vpn" {
       create             = true
       common_name        = "${var.namespace}-${var.environment}.server.keycloak-vpn"
       organization       = var.namespace
-      ca_cert_pem        = module.ca.ca_cert_pem
-      ca_private_key_pem = module.ca.private_key_pem
+      ca_cert_pem        = module.certificates["ca"].ca_cert_pem
+      ca_private_key_pem = module.certificates["ca"].private_key_pem
     }
 
-    authentication_options = [{ type = "federated-authentication" }]
+    authentication_options = [
+      # AWS VPN Client → SAML/Keycloak browser login only
+      {
+        type                           = "federated-authentication"
+        root_certificate_chain_arn     = null
+        active_directory_id            = null
+        saml_provider_arn              = null
+        self_service_saml_provider_arn = null
+      }
+    ]
 
     iam_saml_provider_enabled      = true
     iam_saml_provider_name         = var.iam_saml_provider_name
@@ -221,48 +405,77 @@ module "vpn" {
 ## Keycloak SAML client for AWS Client VPN (inlined)
 ################################################################################
 
-## AWS Client VPN SAML flow takes longer than Keycloak's default 60s window.
-## Set via API to avoid 409 conflict when the realm already exists.
-resource "null_resource" "realm_lifespan" {
-  triggers = {
-    realm = var.keycloak_config.realm
-    url   = var.keycloak_config.url
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      TOKEN=$(curl -s -X POST "${var.keycloak_config.url}/realms/master/protocol/openid-connect/token" \
-        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${local.keycloak_password}&grant_type=password" \
-        | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-      curl -s -o /dev/null -X PUT \
-        -H "Authorization: Bearer $TOKEN" \
-        -H "Content-Type: application/json" \
-        "${var.keycloak_config.url}/admin/realms/${var.keycloak_config.realm}" \
-        -d '{"accessCodeLifespan":300,"accessCodeLifespanLogin":300,"accessCodeLifespanUserAction":300}'
-    EOT
-  }
-
-  depends_on = [keycloak_realm.this]
-}
-
 resource "keycloak_saml_client" "this" {
+  # Required
   realm_id  = var.keycloak_config.realm
   client_id = "urn:amazon:webservices:clientvpn"
-  name      = "AWS Client VPN"
-  enabled   = true
 
+  # General
+  name                      = "AWS Client VPN"
+  enabled                   = true
+  description               = null
+  login_theme               = null
+  always_display_in_console = false
+  consent_required          = false
+  full_scope_allowed        = null
+
+  # SAML document/assertion signing
   sign_documents            = true
   sign_assertions           = true
   include_authn_statement   = true
   client_signature_required = false
-  force_post_binding        = true
-  name_id_format            = "email"
-  force_name_id_format      = true
+
+  # Encryption (disabled — AWS Client VPN does not send encrypted assertions)
+  encrypt_assertions = false
+  # encryption_algorithm           = null  # "AES_256_GCM" | "AES_192_GCM" | "AES_128_GCM" | "AES_256_CBC" | "AES_192_CBC" | "AES_128_CBC"
+  # encryption_key_algorithm       = null  # "RSA-OAEP-11" | "RSA-OAEP-MGF1P" | "RSA1_5"
+  # encryption_digest_method       = null  # "SHA-512" | "SHA-256" | "SHA-1"
+  # encryption_mask_generation_function = null  # "mgf1sha1" | "mgf1sha256" etc.
+  # encryption_certificate         = null
+
+  # Binding / protocol
+  force_post_binding   = true
+  front_channel_logout = true
+
+  # Name ID
+  name_id_format       = "email"
+  force_name_id_format = true
+
+  # Signature
+  signature_algorithm     = null # "RSA_SHA256" recommended; null = realm default
+  signature_key_name      = null # "KEY_ID" | "CERT_SUBJECT" | "NONE"
+  canonicalization_method = null # "EXCLUSIVE" | "EXCLUSIVE_WITH_COMMENTS" | "INCLUSIVE" | "INCLUSIVE_WITH_COMMENTS"
+
+  # URLs
+  root_url                            = null
+  base_url                            = null
+  master_saml_processing_url          = null
+  assertion_consumer_post_url         = null
+  assertion_consumer_redirect_url     = null
+  logout_service_post_binding_url     = null
+  logout_service_redirect_binding_url = null
 
   valid_redirect_uris = [
     "http://127.0.0.1:35001",
     "https://self-service.clientvpn.amazonaws.com/api/auth/sso/saml",
   ]
+
+  # IDP-initiated SSO
+  idp_initiated_sso_url_name    = null
+  idp_initiated_sso_relay_state = null
+
+  # Signing certs (not needed — client_signature_required = false)
+  signing_certificate = null
+  signing_private_key = null
+
+  # Authentication flow binding overrides (optional block)
+  # authentication_flow_binding_overrides {
+  #   browser_id      = null
+  #   direct_grant_id = null
+  # }
+
+  # Extra custom config attributes
+  extra_config = {}
 
   depends_on = [keycloak_realm.this]
 }
@@ -277,7 +490,7 @@ resource "null_resource" "remove_role_list_scope" {
   provisioner "local-exec" {
     command = <<-EOT
       TOKEN=$(curl -s -X POST "${var.keycloak_config.url}/realms/master/protocol/openid-connect/token" \
-        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${local.keycloak_password}&grant_type=password" \
+        -d "client_id=${var.keycloak_config.client_id}&username=${var.keycloak_config.username}&password=${data.aws_ssm_parameter.keycloak_admin_password.value}&grant_type=password" \
         | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
       SCOPE_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
         "${var.keycloak_config.url}/admin/realms/${var.keycloak_config.realm}/client-scopes" \

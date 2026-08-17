@@ -4,15 +4,74 @@ This example deploys an AWS Client VPN endpoint that authenticates users via **K
 
 ## Architecture
 
-```
-Developer Laptop
-  └── AWS VPN Client
-        │
-        ├─(1) Opens browser → Keycloak login page
-        ├─(2) User authenticates with Keycloak credentials
-        ├─(3) Keycloak returns SAML assertion
-        ├─(4) AWS validates assertion against IAM SAML provider
-        └─(5) VPN tunnel established → access to private subnets
+![Keycloak Client VPN Architecture](../../static/keycloak-client-vpn-architecture.png)
+
+<details>
+<summary>Diagram as code (Mermaid)</summary>
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ Developer Laptop"]
+        VPNAPP["AWS VPN Client"]
+        BROWSER["Browser\n(SAML flow)"]
+    end
+
+    subgraph Keycloak["☁️ Keycloak (External IdP)"]
+        KC_REALM["Realm\n(aws-sso)"]
+        KC_SAML["SAML Client\nurn:amazon:webservices:clientvpn"]
+        KC_USER["VPN Users\n(email + password)"]
+        KC_MAPPER["Email Attribute\nMapper"]
+    end
+
+    subgraph AWS["☁️ AWS"]
+        subgraph IAM["IAM"]
+            SAML_PROVIDER["SAML Identity\nProvider"]
+        end
+
+        subgraph ACM["ACM"]
+            CA_CERT["CA Certificate"]
+            SERVER_CERT["Server Certificate\n(with SAN)"]
+        end
+
+        subgraph SSM["SSM Parameter Store"]
+            SSM_META["Keycloak SAML\nMetadata"]
+            SSM_PASS["VPN User\nPasswords (SecureString)"]
+        end
+
+        subgraph VPC["VPC"]
+            subgraph Subnets["Private Subnets"]
+                VPN_EP["AWS Client VPN\nEndpoint\n(federated-authentication)"]
+                SG["Security Group"]
+                AUTHZ["Authorization Rule\n(allow VPC CIDR)"]
+            end
+            PRIVATE_RESOURCES["Private Resources\n(EC2, RDS, ECS…)"]
+        end
+    end
+
+    %% Auth flow
+    VPNAPP -->|"① Initiate connection"| VPN_EP
+    VPN_EP -->|"② Redirect to SAML IdP"| BROWSER
+    BROWSER -->|"③ Login page"| KC_REALM
+    KC_SAML -->|"④ SAML assertion\n(email attribute)"| BROWSER
+    BROWSER -->|"⑤ POST assertion"| VPN_EP
+    VPN_EP -->|"⑥ Validate assertion"| SAML_PROVIDER
+    SAML_PROVIDER -.->|"metadata"| SSM_META
+    VPN_EP -->|"⑦ Tunnel established\n(split tunnel)"| VPNAPP
+    VPNAPP -->|"⑧ Access private resources"| PRIVATE_RESOURCES
+
+    %% TLS
+    VPN_EP --- SERVER_CERT
+    SERVER_CERT --- CA_CERT
+
+    %% Keycloak internals
+    KC_REALM --- KC_SAML
+    KC_SAML --- KC_MAPPER
+    KC_REALM --- KC_USER
+    KC_USER -.->|"initial password"| SSM_PASS
+
+    %% VPN internals
+    VPN_EP --- SG
+    VPN_EP --- AUTHZ
 ```
 
 **Resources created by this example:**
