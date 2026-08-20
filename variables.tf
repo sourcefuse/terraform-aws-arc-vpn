@@ -77,7 +77,7 @@ variable "client_vpn_config" {
 
     # security and network associations
     security_group_data = optional(object({
-      client_vpn_additional_security_group_ids = optional(list(string), [])
+      additional_security_group_ids = optional(list(string), [])
       ingress_rules = list(object({
         description        = optional(string, "")
         from_port          = number
