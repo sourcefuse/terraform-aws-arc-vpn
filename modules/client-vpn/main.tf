@@ -136,3 +136,23 @@ resource "aws_ec2_client_vpn_authorization_rule" "this" {
   access_group_id        = each.value.access_group_id
   authorize_all_groups   = each.value.authorize_all_groups
 }
+
+resource "aws_ec2_client_vpn_route" "this" {
+  for_each = {
+    for pair in flatten([
+      for route in var.routes : [
+        for subnet_id in var.subnet_ids : {
+          destination_cidr_block = route.destination_cidr_block
+          subnet_id              = subnet_id
+        }
+      ]
+    ]) :
+    "${pair.destination_cidr_block}-${pair.subnet_id}" => pair
+  }
+
+  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
+  destination_cidr_block = each.value.destination_cidr_block
+  target_vpc_subnet_id   = each.value.subnet_id
+
+  depends_on = [aws_ec2_client_vpn_network_association.this]
+}

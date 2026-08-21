@@ -35,6 +35,7 @@ module "client_vpn" {
 
   # Network associations
   subnet_ids = var.client_vpn_config.subnet_ids
+  routes     = var.client_vpn_config.routes
 
   tags = var.tags
 }
