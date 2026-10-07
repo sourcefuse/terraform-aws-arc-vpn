@@ -128,13 +128,27 @@ resource "aws_ec2_client_vpn_network_association" "this" {
   subnet_id              = each.value
 }
 
+################################################################################
+# Authorization Rules
+################################################################################
+
 resource "aws_ec2_client_vpn_authorization_rule" "this" {
   for_each = var.authorization_options
 
   client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.this.id
   target_network_cidr    = each.value.target_network_cidr
-  access_group_id        = each.value.access_group_id
-  authorize_all_groups   = each.value.authorize_all_groups
+
+  access_group_id = (
+    each.value.authorize_all_groups
+    ? null
+    : each.value.access_group_id
+  )
+
+  authorize_all_groups = (
+    each.value.authorize_all_groups
+    ? true
+    : null
+  )
 }
 
 resource "aws_ec2_client_vpn_route" "this" {
